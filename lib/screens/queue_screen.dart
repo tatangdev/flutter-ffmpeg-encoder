@@ -121,8 +121,7 @@ class _QueueScreenState extends State<QueueScreen> {
                   IconButton(
                     icon: const Icon(Icons.cancel_outlined,
                         color: AppColors.textQuaternary),
-                    onPressed: () =>
-                        widget.compressionQueue.cancelJob(job.id),
+                    onPressed: () => _confirmCancel(job),
                   ),
                 if (job.status == JobStatus.completed ||
                     job.status == JobStatus.failed ||
@@ -216,6 +215,7 @@ class _QueueScreenState extends State<QueueScreen> {
               Image.file(
                 job.thumbnailFile!,
                 fit: BoxFit.cover,
+                cacheWidth: 96,
               )
             else
               Container(
@@ -281,6 +281,35 @@ class _QueueScreenState extends State<QueueScreen> {
     final parts = path.split('/');
     if (parts.length <= 3) return path;
     return '.../${parts.sublist(parts.length - 2).join('/')}';
+  }
+
+  Future<void> _confirmCancel(CompressionJob job) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Cancel Compression',
+            style: AppTextStyles.textLgSemibold),
+        content: Text(
+          'Are you sure you want to cancel compressing "${job.fileName}"?',
+          style: AppTextStyles.textMdRegular.copyWith(
+            color: AppColors.textSecondary,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('No'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Yes, Cancel'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      widget.compressionQueue.cancelJob(job.id);
+    }
   }
 
   String _statusLabel(CompressionJob job) {

@@ -51,7 +51,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ListTile(
             leading: Icon(
               _storageGranted ? Icons.check_circle : Icons.cancel,
-              color: _storageGranted ? Colors.green : Colors.red,
+              color: _storageGranted ? AppColors.textPrimary : AppColors.textQuaternary,
             ),
             title: const Text('Storage / Media Access',
                 style: AppTextStyles.textMdSemibold),
@@ -74,7 +74,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ListTile(
             leading: Icon(
               _manageStorageGranted ? Icons.check_circle : Icons.cancel,
-              color: _manageStorageGranted ? Colors.green : Colors.red,
+              color: _manageStorageGranted ? AppColors.textPrimary : AppColors.textQuaternary,
             ),
             title: const Text('All Files Access',
                 style: AppTextStyles.textMdSemibold),

@@ -7,12 +7,12 @@ class AppColors {
   static const textPrimary = Color(0xFF282828); // 900 - headings
   static const textSecondary = Color(0xFF545454); // 700 - supporting text
   static const textTertiary = Color(0xFF676767); // 600 - nav, descriptions
-  static const textBrand = Color(0xFF268099); // 600 - brand/teal tags
+  static const textBrand = Color(0xFF282828); // 900 - brand/tags
 
   static const textQuaternary = Color(0xFF858585); // 500 - subtle labels
 
   // Button colors
-  static const accent = Color(0xFF379CB8); // primary button bg/border
+  static const accent = Color(0xFF282828); // primary button bg/border
   static const borderSecondary = Color(0xFFDDDDDD); // secondary button border
 
   // Background colors

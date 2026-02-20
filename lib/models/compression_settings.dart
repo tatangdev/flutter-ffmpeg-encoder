@@ -228,6 +228,30 @@ class CompressionSettings {
       ? PlatformPresets.resolve(platform, tier)
       : CustomPresets.resolve(customResolution, tier);
 
+  Map<String, dynamic> toMap() {
+    return {
+      'settings_export_mode': exportMode.name,
+      'settings_platform': platform.name,
+      'settings_custom_resolution': customResolution.name,
+      'settings_tier': tier.name,
+      'settings_aspect_ratio': aspectRatio.name,
+      'settings_fit': fit.name,
+      'settings_delete_original': deleteOriginal ? 1 : 0,
+    };
+  }
+
+  factory CompressionSettings.fromMap(Map<String, dynamic> map) {
+    return CompressionSettings(
+      exportMode: ExportMode.values.byName(map['settings_export_mode'] as String),
+      platform: VideoPlatform.values.byName(map['settings_platform'] as String),
+      customResolution: CustomResolution.values.byName(map['settings_custom_resolution'] as String),
+      tier: QualityTier.values.byName(map['settings_tier'] as String),
+      aspectRatio: VideoAspectRatio.values.byName(map['settings_aspect_ratio'] as String),
+      fit: VideoFit.values.byName(map['settings_fit'] as String),
+      deleteOriginal: (map['settings_delete_original'] as int) == 1,
+    );
+  }
+
   CompressionSettings copyWith({
     ExportMode? exportMode,
     VideoPlatform? platform,

@@ -16,7 +16,10 @@ class VideoCompressorApp extends StatelessWidget {
       title: 'Video Compressor',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: AppColors.accent),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.grey,
+          primary: AppColors.accent,
+        ),
         useMaterial3: true,
         fontFamily: 'OverusedGrotesk',
         scaffoldBackgroundColor: Colors.white,
@@ -63,9 +66,19 @@ class VideoCompressorApp extends StatelessWidget {
           labelMedium: AppTextStyles.textSmSemibold,
           labelSmall: AppTextStyles.textSmMedium,
         ),
-        appBarTheme: const AppBarTheme(
+        appBarTheme: AppBarTheme(
+          backgroundColor: Colors.white,
+          surfaceTintColor: Colors.transparent,
           titleTextStyle: AppTextStyles.textLgSemibold,
           centerTitle: true,
+          shape: Border(
+            bottom: BorderSide(color: AppColors.borderSecondary),
+          ),
+        ),
+        navigationBarTheme: NavigationBarThemeData(
+          backgroundColor: Colors.white,
+          surfaceTintColor: Colors.transparent,
+          indicatorColor: AppColors.bgTertiary,
         ),
         filledButtonTheme: FilledButtonThemeData(
           style: FilledButton.styleFrom(

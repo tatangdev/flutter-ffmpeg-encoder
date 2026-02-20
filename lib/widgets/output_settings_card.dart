@@ -67,9 +67,8 @@ class OutputSettingsCard extends StatelessWidget {
             else
               _buildSocialMediaSection(),
 
-            // ── Crop toggle for social media (non-original) ──
-            if (settings.exportMode == ExportMode.socialMedia &&
-                !settings.aspectRatio.isOriginal) ...[
+            // ── Crop toggle (non-original aspect ratio) ──
+            if (!settings.aspectRatio.isOriginal) ...[
               const SizedBox(height: 12),
               _buildToggleRow(
                 label: 'Crop to fill',
@@ -83,10 +82,6 @@ class OutputSettingsCard extends StatelessWidget {
               ),
             ],
 
-            const Padding(
-              padding: EdgeInsets.only(top: 12),
-              child: Divider(height: 1),
-            ),
             const SizedBox(height: 12),
 
             // ── Optimize storage toggle ──
@@ -229,20 +224,6 @@ class OutputSettingsCard extends StatelessWidget {
           ),
         ),
 
-        // Crop toggle (only when a specific ratio is selected)
-        if (!settings.aspectRatio.isOriginal) ...[
-          const SizedBox(height: 12),
-          _buildToggleRow(
-            label: 'Crop to fill',
-            subtitle: settings.fit == VideoFit.cover
-                ? 'Fills frame, crops overflow'
-                : 'Fits entire video, adds black bars',
-            value: settings.fit == VideoFit.cover,
-            onChanged: (v) => onChanged(settings.copyWith(
-              fit: v ? VideoFit.cover : VideoFit.contain,
-            )),
-          ),
-        ],
       ],
     );
   }
@@ -455,7 +436,6 @@ class _AspectRatioPreview extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.black,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.accent, width: 2),
       ),
       clipBehavior: Clip.antiAlias,
       child: hasThumbnail

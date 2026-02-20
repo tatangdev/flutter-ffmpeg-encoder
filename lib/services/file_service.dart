@@ -98,8 +98,9 @@ class FileService {
       'thumb_${DateTime.now().millisecondsSinceEpoch}.jpg',
     );
 
+    String quote(String p) => "'${p.replaceAll("'", r"'\''")}'";
     final session = await FFmpegKit.execute(
-      '-i $videoPath -ss 00:00:01 -vframes 1 -q:v 2 -y $thumbPath',
+      '-i ${quote(videoPath)} -ss 00:00:01 -vframes 1 -q:v 2 -y ${quote(thumbPath)}',
     );
     final returnCode = await session.getReturnCode();
 

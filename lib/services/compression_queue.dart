@@ -9,24 +9,34 @@ import '../models/compression_job.dart';
 import '../models/compression_result.dart';
 import '../utils/file_utils.dart';
 import 'compression_service.dart';
-import 'file_service.dart';
+import 'database_service.dart';
 
 class CompressionQueue extends ChangeNotifier {
-  final FileService _fileService;
+  final DatabaseService _databaseService;
   final List<CompressionJob> _jobs = [];
+  Timer? _progressTimer;
 
   List<CompressionJob> get jobs => List.unmodifiable(_jobs);
 
-  CompressionQueue(this._fileService);
+  CompressionQueue(this._databaseService);
+
+  Future<void> init() async {
+    await _databaseService.markInterruptedJobsAsFailed();
+    final rows = await _databaseService.getAllJobs();
+    _jobs.addAll(rows.map((row) => CompressionJob.fromMap(row)));
+    notifyListeners();
+  }
 
   Future<void> addJob(CompressionJob job) async {
     _jobs.insert(0, job);
+    await _databaseService.insertJob(job.toMap());
     notifyListeners();
     _startJob(job);
   }
 
   Future<void> _startJob(CompressionJob job) async {
     job.status = JobStatus.compressing;
+    await _databaseService.updateJob(job.toMap());
     notifyListeners();
 
     final stopwatch = Stopwatch()..start();
@@ -34,8 +44,7 @@ class CompressionQueue extends ChangeNotifier {
     try {
       final inputFile = File(job.inputPath);
       final originalSize = await inputFile.length();
-      final videoInfo = await _fileService.getVideoInfo(job.inputPath);
-      final totalDurationMs = videoInfo.duration?.inMilliseconds ?? 0;
+      final totalDurationMs = job.durationMs ?? 0;
 
       final outputPath =
           FileUtils.generateOutputPath(job.inputPath, job.outputDir);
@@ -58,7 +67,15 @@ class CompressionQueue extends ChangeNotifier {
             final compressedSize = await File(outputPath).length();
             bool deleted = false;
             if (job.settings.deleteOriginal) {
-              deleted = await _fileService.deleteFile(job.inputPath);
+              try {
+                final original = File(job.inputPath);
+                if (await original.exists()) {
+                  await original.delete();
+                  deleted = true;
+                }
+              } on FileSystemException {
+                // Deletion failed, continue without deleting
+              }
             }
             completer.complete(CompressionResult(
               success: true,
@@ -91,12 +108,20 @@ class CompressionQueue extends ChangeNotifier {
           if (totalDurationMs > 0) {
             job.progress =
                 (statistics.getTime() / totalDurationMs).clamp(0.0, 1.0);
-            notifyListeners();
           }
         },
       );
 
+      // Throttle UI updates to ~4fps instead of every FFmpeg stats callback
+      _progressTimer?.cancel();
+      _progressTimer = Timer.periodic(
+        const Duration(milliseconds: 250),
+        (_) => notifyListeners(),
+      );
+
       final result = await completer.future;
+      _progressTimer?.cancel();
+      _progressTimer = null;
       job.result = result;
       job.status = result.success ? JobStatus.completed : JobStatus.failed;
     } catch (e) {
@@ -108,6 +133,7 @@ class CompressionQueue extends ChangeNotifier {
     }
 
     job.session = null;
+    await _databaseService.updateJob(job.toMap());
     notifyListeners();
   }
 
@@ -117,22 +143,26 @@ class CompressionQueue extends ChangeNotifier {
       await FFmpegKit.cancel(job.session!.getSessionId());
       job.status = JobStatus.cancelled;
       job.session = null;
+      await _databaseService.updateJob(job.toMap());
       notifyListeners();
     }
   }
 
-  void removeJob(String jobId) {
+  Future<void> removeJob(String jobId) async {
     _jobs.removeWhere((j) => j.id == jobId);
+    await _databaseService.deleteJob(jobId);
     notifyListeners();
   }
 
   @override
   void dispose() {
+    _progressTimer?.cancel();
     for (final job in _jobs) {
       if (job.session != null) {
         FFmpegKit.cancel(job.session!.getSessionId());
       }
     }
+    _databaseService.close();
     super.dispose();
   }
 }

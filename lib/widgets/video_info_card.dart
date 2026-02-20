@@ -32,7 +32,7 @@ class VideoInfoCard extends StatelessWidget {
                 width: 56,
                 height: 56,
                 child: thumbnail != null
-                    ? Image.file(thumbnail!, fit: BoxFit.cover)
+                    ? Image.file(thumbnail!, fit: BoxFit.cover, cacheWidth: 112)
                     : Container(
                         color: AppColors.bgSecondary,
                         child: const Icon(Icons.videocam,

@@ -10,50 +10,40 @@ class EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 96,
-              height: 96,
-              decoration: BoxDecoration(
-                color: AppColors.accent.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(28),
-              ),
-              child: const Icon(
-                Icons.video_library_outlined,
-                size: 48,
-                color: AppColors.accent,
-              ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              color: AppColors.bgSecondary,
+              borderRadius: BorderRadius.circular(20),
             ),
-            const SizedBox(height: 24),
-            const Text(
-              'No video selected',
-              style: AppTextStyles.displayXs,
-              textAlign: TextAlign.center,
+            child: const Icon(Icons.video_library_outlined,
+                size: 40, color: AppColors.textQuaternary),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'No video selected',
+            style: AppTextStyles.textMdSemibold.copyWith(
+              color: AppColors.textSecondary,
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Pick a video from your device to configure\ncompression settings and reduce file size.',
-              style: AppTextStyles.textMdRegular.copyWith(
-                color: AppColors.textTertiary,
-              ),
-              textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Pick a video to configure compression settings',
+            style: AppTextStyles.textSmMedium.copyWith(
+              color: AppColors.textTertiary,
             ),
-            const SizedBox(height: 32),
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: FilledButton.icon(
-                onPressed: onSelectVideo,
-                icon: const Icon(Icons.video_library),
-                label: const Text('Select Video'),
-              ),
-            ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 24),
+          FilledButton.icon(
+            onPressed: onSelectVideo,
+            icon: const Icon(Icons.video_library),
+            label: const Text('Select Video'),
+          ),
+        ],
       ),
     );
   }
