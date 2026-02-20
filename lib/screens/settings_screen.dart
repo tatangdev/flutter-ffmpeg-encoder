@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../theme/app_typography.dart';
@@ -13,6 +15,8 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _storageGranted = false;
   bool _manageStorageGranted = false;
+  bool _notificationGranted = false;
+  bool _batteryOptimized = false;
 
   @override
   void initState() {
@@ -24,11 +28,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final storage = await Permission.storage.isGranted;
     final videos = await Permission.videos.isGranted;
     final manage = await Permission.manageExternalStorage.isGranted;
+    final notification = await Permission.notification.isGranted;
+    final battery =
+        await FlutterForegroundTask.isIgnoringBatteryOptimizations;
 
     if (!mounted) return;
     setState(() {
       _storageGranted = storage || videos;
       _manageStorageGranted = manage;
+      _notificationGranted = notification;
+      _batteryOptimized = battery;
     });
   }
 
@@ -50,8 +59,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           ListTile(
-            leading: Icon(
-              _storageGranted ? Icons.check_circle : Icons.cancel,
+            leading: FaIcon(
+              _storageGranted ? FontAwesomeIcons.solidCircleCheck : FontAwesomeIcons.solidCircleXmark,
               color: _storageGranted ? AppColors.textPrimary : AppColors.textQuaternary,
             ),
             title: const Text('Storage / Media Access',
@@ -73,8 +82,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
           ),
           ListTile(
-            leading: Icon(
-              _manageStorageGranted ? Icons.check_circle : Icons.cancel,
+            leading: FaIcon(
+              _manageStorageGranted ? FontAwesomeIcons.solidCircleCheck : FontAwesomeIcons.solidCircleXmark,
               color: _manageStorageGranted ? AppColors.textPrimary : AppColors.textQuaternary,
             ),
             title: const Text('All Files Access',
@@ -97,9 +106,60 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     child: const Text('Grant'),
                   ),
           ),
+          ListTile(
+            leading: FaIcon(
+              _notificationGranted ? FontAwesomeIcons.solidCircleCheck : FontAwesomeIcons.solidCircleXmark,
+              color: _notificationGranted ? AppColors.textPrimary : AppColors.textQuaternary,
+            ),
+            title: const Text('Notifications',
+                style: AppTextStyles.textMdSemibold),
+            subtitle: Text(
+              _notificationGranted
+                  ? 'Granted'
+                  : 'Needed for compression progress',
+              style: AppTextStyles.textSmMedium.copyWith(
+                color: AppColors.textTertiary,
+              ),
+            ),
+            trailing: _notificationGranted
+                ? null
+                : TextButton(
+                    onPressed: () async {
+                      await Permission.notification.request();
+                      _checkPermissions();
+                    },
+                    child: const Text('Grant'),
+                  ),
+          ),
+          ListTile(
+            leading: FaIcon(
+              _batteryOptimized ? FontAwesomeIcons.solidCircleCheck : FontAwesomeIcons.solidCircleXmark,
+              color: _batteryOptimized ? AppColors.textPrimary : AppColors.textQuaternary,
+            ),
+            title: const Text('Battery Optimization',
+                style: AppTextStyles.textMdSemibold),
+            subtitle: Text(
+              _batteryOptimized
+                  ? 'Unrestricted'
+                  : 'Needed for background compression',
+              style: AppTextStyles.textSmMedium.copyWith(
+                color: AppColors.textTertiary,
+              ),
+            ),
+            trailing: _batteryOptimized
+                ? null
+                : TextButton(
+                    onPressed: () async {
+                      await FlutterForegroundTask
+                          .requestIgnoreBatteryOptimization();
+                      _checkPermissions();
+                    },
+                    child: const Text('Grant'),
+                  ),
+          ),
           const Divider(),
           ListTile(
-            leading: const Icon(Icons.settings),
+            leading: const FaIcon(FontAwesomeIcons.gear),
             title: const Text('App Settings',
                 style: AppTextStyles.textMdSemibold),
             subtitle: Text(
@@ -121,7 +181,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           ListTile(
-            leading: Icon(Icons.compress,
+            leading: FaIcon(FontAwesomeIcons.compress,
                 color: Theme.of(context).colorScheme.primary),
             title: const Text('Video Compressor',
                 style: AppTextStyles.textMdSemibold),
@@ -142,14 +202,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   children: [
                     const Text('Features', style: AppTextStyles.textMdSemibold),
                     const SizedBox(height: 16),
-                    _featureRow(Icons.compress, 'Compress videos with H.264'),
+                    _featureRow(FontAwesomeIcons.compress, 'Compress videos with H.264'),
                     _featureRow(
-                        Icons.tune, 'Configurable resolution, quality & speed'),
-                    _featureRow(Icons.folder_open, 'Choose output directory'),
+                        FontAwesomeIcons.sliders, 'Configurable resolution, quality & speed'),
+                    _featureRow(FontAwesomeIcons.folderOpen, 'Choose output directory'),
                     _featureRow(
-                        Icons.speed, 'Asynchronous compression with progress'),
+                        FontAwesomeIcons.gaugeHigh, 'Asynchronous compression with progress'),
                     _featureRow(
-                        Icons.delete_outline, 'Optional original file deletion'),
+                        FontAwesomeIcons.trashCan, 'Optional original file deletion'),
                   ],
                 ),
               ),
@@ -165,8 +225,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   children: [
                     const Text('Powered By', style: AppTextStyles.textMdSemibold),
                     const SizedBox(height: 16),
-                    _featureRow(Icons.movie, 'FFmpeg 8.0'),
-                    _featureRow(Icons.flutter_dash, 'Flutter'),
+                    _featureRow(FontAwesomeIcons.film, 'FFmpeg 8.0'),
+                    _featureRow(FontAwesomeIcons.feather, 'Flutter'),
                   ],
                 ),
               ),
@@ -189,7 +249,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               color: AppColors.bgSecondary,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, size: 18, color: AppColors.textTertiary),
+            child: Center(child: FaIcon(icon, size: 16, color: AppColors.textTertiary)),
           ),
           const SizedBox(width: 12),
           Expanded(

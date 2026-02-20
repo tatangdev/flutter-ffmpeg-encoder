@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../theme/app_typography.dart';
 
@@ -20,8 +21,8 @@ class EmptyState extends StatelessWidget {
               color: AppColors.bgSecondary,
               borderRadius: BorderRadius.circular(20),
             ),
-            child: const Icon(Icons.video_library_outlined,
-                size: 40, color: AppColors.textQuaternary),
+            child: const Center(child: FaIcon(FontAwesomeIcons.photoFilm,
+                size: 36, color: AppColors.textQuaternary)),
           ),
           const SizedBox(height: 16),
           Text(
@@ -40,7 +41,7 @@ class EmptyState extends StatelessWidget {
           const SizedBox(height: 24),
           FilledButton.icon(
             onPressed: onSelectVideo,
-            icon: const Icon(Icons.video_library),
+            icon: const FaIcon(FontAwesomeIcons.photoFilm),
             label: const Text('Select Video'),
           ),
         ],

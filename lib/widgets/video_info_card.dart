@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../models/video_info.dart';
 import '../theme/app_typography.dart';
@@ -35,8 +36,8 @@ class VideoInfoCard extends StatelessWidget {
                     ? Image.file(thumbnail!, fit: BoxFit.cover, cacheWidth: 112)
                     : Container(
                         color: AppColors.bgSecondary,
-                        child: const Icon(Icons.videocam,
-                            size: 24, color: AppColors.textTertiary),
+                        child: const Center(child: FaIcon(FontAwesomeIcons.video,
+                            size: 20, color: AppColors.textTertiary)),
                       ),
               ),
             ),

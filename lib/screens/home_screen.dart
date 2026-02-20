@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:path/path.dart' as p;
 import 'package:permission_handler/permission_handler.dart';
 
@@ -396,7 +397,7 @@ class _HomeScreenState extends State<HomeScreen> {
             if (_pageState == _PageState.ready)
               TextButton.icon(
                 onPressed: _pickVideo,
-                icon: const Icon(Icons.swap_horiz, size: 20),
+                icon: const FaIcon(FontAwesomeIcons.rightLeft, size: 16),
                 label: const Text('Change'),
               ),
           ],
@@ -471,9 +472,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                   fit: BoxFit.cover, cacheWidth: 112)
                               : Container(
                                   color: AppColors.bgSecondary,
-                                  child: const Icon(Icons.videocam,
-                                      size: 28,
-                                      color: AppColors.textQuaternary),
+                                  child: const Center(child: FaIcon(FontAwesomeIcons.video,
+                                      size: 24,
+                                      color: AppColors.textQuaternary)),
                                 ),
                         ),
                       ),
@@ -521,8 +522,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           ],
                         ),
                       ),
-                      const Icon(Icons.chevron_right,
-                          color: AppColors.textQuaternary),
+                      const FaIcon(FontAwesomeIcons.chevronRight,
+                          size: 18, color: AppColors.textQuaternary),
                     ],
                   ),
                 ),
@@ -547,7 +548,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     height: 48,
                     child: FilledButton.icon(
                       onPressed: _pickVideo,
-                      icon: const Icon(Icons.video_library, size: 20),
+                      icon: const FaIcon(FontAwesomeIcons.photoFilm, size: 18),
                       label: const Text('New Video'),
                     ),
                   ),
@@ -589,7 +590,7 @@ class _HomeScreenState extends State<HomeScreen> {
             height: 52,
             child: FilledButton.icon(
               onPressed: _startCompression,
-              icon: const Icon(Icons.compress),
+              icon: const FaIcon(FontAwesomeIcons.compress),
               label: const Text('Compress Video'),
             ),
           ),
@@ -615,8 +616,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   color: AppColors.bgSecondary,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.folder_outlined,
-                    color: AppColors.accent),
+                child: const Center(child: FaIcon(FontAwesomeIcons.folder,
+                    color: AppColors.accent)),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -637,8 +638,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right,
-                  color: AppColors.textQuaternary),
+              const FaIcon(FontAwesomeIcons.chevronRight,
+                  size: 18, color: AppColors.textQuaternary),
             ],
           ),
         ),
@@ -667,8 +668,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     Theme.of(context).colorScheme.error.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(Icons.warning_amber,
-                  color: Theme.of(context).colorScheme.error),
+              child: Center(child: FaIcon(FontAwesomeIcons.triangleExclamation,
+                  color: Theme.of(context).colorScheme.error)),
             ),
             const SizedBox(width: 12),
             Expanded(

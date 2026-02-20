@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../models/compression_result.dart';
 import '../theme/app_typography.dart';
@@ -33,7 +34,7 @@ class FileSizeComparison extends StatelessWidget {
                   color: theme.colorScheme.error.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(Icons.error_outline, color: theme.colorScheme.error),
+                child: Center(child: FaIcon(FontAwesomeIcons.circleExclamation, color: theme.colorScheme.error)),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -69,7 +70,7 @@ class FileSizeComparison extends StatelessWidget {
                     color: AppColors.accent.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(Icons.check_circle, color: AppColors.accent),
+                  child: const Center(child: FaIcon(FontAwesomeIcons.solidCircleCheck, color: AppColors.accent)),
                 ),
                 const SizedBox(width: 12),
                 const Text('Compression Complete',

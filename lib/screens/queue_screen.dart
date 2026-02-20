@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../models/compression_job.dart';
 import '../models/compression_settings.dart';
@@ -69,8 +70,8 @@ class _QueueScreenState extends State<QueueScreen> {
               color: AppColors.bgSecondary,
               borderRadius: BorderRadius.circular(20),
             ),
-            child: const Icon(Icons.queue,
-                size: 40, color: AppColors.textQuaternary),
+            child: const Center(child: FaIcon(FontAwesomeIcons.listUl,
+                size: 36, color: AppColors.textQuaternary)),
           ),
           const SizedBox(height: 16),
           Text(
@@ -125,16 +126,16 @@ class _QueueScreenState extends State<QueueScreen> {
                 ),
                 if (job.status == JobStatus.compressing)
                   IconButton(
-                    icon: const Icon(Icons.cancel_outlined,
-                        color: AppColors.textQuaternary),
+                    icon: const FaIcon(FontAwesomeIcons.circleXmark,
+                        size: 22, color: AppColors.textQuaternary),
                     onPressed: () => _confirmCancel(job),
                   ),
                 if (job.status == JobStatus.completed ||
                     job.status == JobStatus.failed ||
                     job.status == JobStatus.cancelled)
                   IconButton(
-                    icon: const Icon(Icons.close,
-                        color: AppColors.textQuaternary),
+                    icon: const FaIcon(FontAwesomeIcons.xmark,
+                        size: 22, color: AppColors.textQuaternary),
                     onPressed: () =>
                         widget.compressionQueue.removeJob(job.id),
                   ),
@@ -226,16 +227,16 @@ class _QueueScreenState extends State<QueueScreen> {
             else
               Container(
                 color: AppColors.bgSecondary,
-                child: const Icon(Icons.videocam,
-                    size: 24, color: AppColors.textTertiary),
+                child: const Center(child: FaIcon(FontAwesomeIcons.video,
+                    size: 20, color: AppColors.textTertiary)),
               ),
 
             // Checkmark overlay when completed
             if (isFinished)
               Container(
                 color: AppColors.accent.withValues(alpha: 0.7),
-                child: const Icon(Icons.check,
-                    color: Colors.white, size: 24),
+                child: const Center(child: FaIcon(FontAwesomeIcons.check,
+                    color: Colors.white, size: 20)),
               ),
           ],
         ),
@@ -256,9 +257,9 @@ class _QueueScreenState extends State<QueueScreen> {
 
     return Row(
       children: [
-        Expanded(child: _detailChip(Icons.tune, preset)),
-        Expanded(child: _detailChip(Icons.high_quality_outlined, quality)),
-        Expanded(child: _detailChip(Icons.folder_outlined, _shortenPath(job.outputDir))),
+        Expanded(child: _detailChip(FontAwesomeIcons.sliders, preset)),
+        Expanded(child: _detailChip(FontAwesomeIcons.solidStar, quality)),
+        Expanded(child: _detailChip(FontAwesomeIcons.folder, _shortenPath(job.outputDir))),
       ],
     );
   }
@@ -266,7 +267,7 @@ class _QueueScreenState extends State<QueueScreen> {
   Widget _detailChip(IconData icon, String label) {
     return Row(
       children: [
-        Icon(icon, size: 14, color: AppColors.textQuaternary),
+        FaIcon(icon, size: 12, color: AppColors.textQuaternary),
         const SizedBox(width: 4),
         Expanded(
           child: Text(

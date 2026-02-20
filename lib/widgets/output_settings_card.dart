@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../models/compression_settings.dart';
 import '../theme/app_typography.dart';
@@ -153,20 +154,19 @@ class OutputSettingsCard extends StatelessWidget {
   // ── Aspect Ratio ──
 
   Widget _buildPreviewSection() {
-    return Column(
-      children: [
-        Center(
-          child: _AspectRatioPreview(
+    return SizedBox(
+      width: double.infinity,
+      child: Column(
+        children: [
+          _AspectRatioPreview(
             aspectRatio: settings.aspectRatio,
             fit: settings.fit,
             thumbnailFile: thumbnailFile,
             videoWidth: videoWidth,
             videoHeight: videoHeight,
           ),
-        ),
-        const SizedBox(height: 8),
-        Center(
-          child: Text(
+          const SizedBox(height: 8),
+          Text(
             settings.aspectRatio.isOriginal
                 ? 'Original resolution'
                 : '${settings.resolvedWidth} x ${settings.resolvedHeight}',
@@ -174,8 +174,8 @@ class OutputSettingsCard extends StatelessWidget {
               color: AppColors.textTertiary,
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -186,18 +186,7 @@ class OutputSettingsCard extends StatelessWidget {
         const Text('Aspect Ratio', style: AppTextStyles.textMdSemibold),
         const SizedBox(height: 8),
         InputDecorator(
-          decoration: InputDecoration(
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.borderSecondary),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.borderSecondary),
-            ),
-          ),
+          decoration: _dropdownDecoration(),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<VideoAspectRatio>(
               value: settings.aspectRatio,
@@ -237,18 +226,7 @@ class OutputSettingsCard extends StatelessWidget {
         const Text('Resolution', style: AppTextStyles.textMdSemibold),
         const SizedBox(height: 8),
         InputDecorator(
-          decoration: InputDecoration(
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.borderSecondary),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.borderSecondary),
-            ),
-          ),
+          decoration: _dropdownDecoration(),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<CustomResolution>(
               value: settings.customResolution,
@@ -287,18 +265,7 @@ class OutputSettingsCard extends StatelessWidget {
         const Text('Platform', style: AppTextStyles.textMdSemibold),
         const SizedBox(height: 8),
         InputDecorator(
-          decoration: InputDecoration(
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.borderSecondary),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.borderSecondary),
-            ),
-          ),
+          decoration: _dropdownDecoration(),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<VideoPlatform>(
               value: settings.platform,
@@ -309,8 +276,8 @@ class OutputSettingsCard extends StatelessWidget {
                         value: p,
                         child: Row(
                           children: [
-                            Icon(_iconFor(p),
-                                size: 20, color: AppColors.textSecondary),
+                            FaIcon(_iconFor(p),
+                                size: 18, color: AppColors.textSecondary),
                             const SizedBox(width: 12),
                             Text(p.label, style: AppTextStyles.textMdRegular),
                           ],
@@ -341,11 +308,24 @@ class OutputSettingsCard extends StatelessWidget {
 
   // ── Helpers ──
 
+  static InputDecoration _dropdownDecoration() => InputDecoration(
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.borderSecondary),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.borderSecondary),
+        ),
+      );
+
   IconData _iconFor(VideoPlatform p) => switch (p) {
-        VideoPlatform.instagramPost => Icons.photo_outlined,
-        VideoPlatform.instagramReels => Icons.camera_alt_outlined,
-        VideoPlatform.tiktok => Icons.music_note_outlined,
-        VideoPlatform.youtubeShorts => Icons.play_circle_outline,
+        VideoPlatform.instagramPost => FontAwesomeIcons.instagram,
+        VideoPlatform.instagramReels => FontAwesomeIcons.instagram,
+        VideoPlatform.tiktok => FontAwesomeIcons.tiktok,
+        VideoPlatform.youtubeShorts => FontAwesomeIcons.youtube,
       };
 
   String _constraintText(VideoPlatform p) => switch (p) {
@@ -369,6 +349,11 @@ class _AspectRatioPreview extends StatelessWidget {
   final int? videoWidth;
   final int? videoHeight;
 
+  static const _maxW = 220.0;
+  static const _maxH = 200.0;
+  static const _animDuration = Duration(milliseconds: 300);
+  static const _animCurve = Curves.easeInOut;
+
   const _AspectRatioPreview({
     required this.aspectRatio,
     required this.fit,
@@ -377,121 +362,73 @@ class _AspectRatioPreview extends StatelessWidget {
     this.videoHeight,
   });
 
+  double? get _videoRatio =>
+      (videoWidth != null && videoHeight != null && videoHeight! > 0)
+          ? videoWidth! / videoHeight!
+          : null;
+
+  double get _displayRatio => aspectRatio.isOriginal
+      ? (_videoRatio ?? 1.0)
+      : aspectRatio.width / aspectRatio.height;
+
+  bool get _isCover => fit == VideoFit.cover || aspectRatio.isOriginal;
+
+  /// Fits [ratio] into [maxW]×[maxH], returning (width, height).
+  static (double, double) _fitInBounds(
+      double ratio, double maxW, double maxH) {
+    if (ratio >= 1) {
+      final h = maxW / ratio;
+      return h <= maxH ? (maxW, h) : (maxH * ratio, maxH);
+    }
+    final w = maxH * ratio;
+    return w <= maxW ? (w, maxH) : (maxW, maxW / ratio);
+  }
+
   @override
   Widget build(BuildContext context) {
-    const maxHeight = 200.0;
-    const maxWidth = 220.0;
+    final ratio = _displayRatio;
+    final (frameW, frameH) = _fitInBounds(ratio, _maxW, _maxH);
 
-    double previewWidth;
-    double previewHeight;
-
-    if (aspectRatio.isOriginal) {
-      if (videoWidth != null && videoHeight != null && videoHeight! > 0) {
-        final ratio = videoWidth! / videoHeight!;
-        if (ratio >= 1) {
-          previewWidth = maxWidth;
-          previewHeight = maxWidth / ratio;
-          if (previewHeight > maxHeight) {
-            previewHeight = maxHeight;
-            previewWidth = maxHeight * ratio;
-          }
-        } else {
-          previewHeight = maxHeight;
-          previewWidth = maxHeight * ratio;
-          if (previewWidth > maxWidth) {
-            previewWidth = maxWidth;
-            previewHeight = maxWidth / ratio;
-          }
-        }
+    // In contain mode, shrink the inner box to the video's proportions
+    // within the frame so it fits without cropping (black bars on 2 sides).
+    var (innerW, innerH) = (frameW, frameH);
+    final vr = _videoRatio;
+    if (!_isCover && vr != null && (vr - ratio).abs() >= 0.01) {
+      if (vr > ratio) {
+        innerH = frameW / vr;
       } else {
-        previewWidth = 160;
-        previewHeight = 160;
-      }
-    } else {
-      final ratio = aspectRatio.width / aspectRatio.height;
-      if (ratio >= 1) {
-        previewWidth = maxWidth;
-        previewHeight = maxWidth / ratio;
-        if (previewHeight > maxHeight) {
-          previewHeight = maxHeight;
-          previewWidth = maxHeight * ratio;
-        }
-      } else {
-        previewHeight = maxHeight;
-        previewWidth = maxHeight * ratio;
-        if (previewWidth > maxWidth) {
-          previewWidth = maxWidth;
-          previewHeight = maxWidth / ratio;
-        }
+        innerW = frameH * vr;
       }
     }
 
-    final hasThumbnail = thumbnailFile != null;
-
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 250),
-      curve: Curves.easeInOut,
-      width: previewWidth,
-      height: previewHeight,
+      duration: _animDuration,
+      curve: _animCurve,
+      width: frameW,
+      height: frameH,
       decoration: BoxDecoration(
         color: Colors.black,
         borderRadius: BorderRadius.circular(12),
       ),
       clipBehavior: Clip.antiAlias,
-      child: hasThumbnail
-          ? _buildThumbnailPreview(previewWidth, previewHeight)
+      child: thumbnailFile != null
+          ? Center(
+              child: AnimatedContainer(
+                duration: _animDuration,
+                curve: _animCurve,
+                width: innerW,
+                height: innerH,
+                decoration: const BoxDecoration(),
+                clipBehavior: Clip.antiAlias,
+                child: Image.file(
+                  thumbnailFile!,
+                  width: double.infinity,
+                  height: double.infinity,
+                  fit: BoxFit.cover,
+                ),
+              ),
+            )
           : _buildPlaceholder(),
-    );
-  }
-
-  Widget _buildThumbnailPreview(double containerW, double containerH) {
-    if (aspectRatio.isOriginal) {
-      return Image.file(
-        thumbnailFile!,
-        width: containerW,
-        height: containerH,
-        fit: BoxFit.cover,
-      );
-    }
-
-    final targetRatio = aspectRatio.width / aspectRatio.height;
-    final videoRatio =
-        (videoWidth != null && videoHeight != null && videoHeight! > 0)
-            ? videoWidth! / videoHeight!
-            : targetRatio;
-
-    double containScale;
-    if ((videoRatio - targetRatio).abs() < 0.01) {
-      containScale = 1.0;
-    } else if (videoRatio > targetRatio) {
-      containScale = targetRatio / videoRatio;
-    } else {
-      containScale = videoRatio / targetRatio;
-    }
-
-    final targetScale = fit == VideoFit.cover ? 1.0 : containScale;
-
-    return TweenAnimationBuilder<double>(
-      tween: Tween(end: targetScale),
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-      builder: (context, scale, child) {
-        return Container(
-          color: Colors.black,
-          width: containerW,
-          height: containerH,
-          child: Transform.scale(
-            scale: scale,
-            child: child,
-          ),
-        );
-      },
-      child: Image.file(
-        thumbnailFile!,
-        width: containerW,
-        height: containerH,
-        fit: BoxFit.cover,
-      ),
     );
   }
 
@@ -500,13 +437,11 @@ class _AspectRatioPreview extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
+          FaIcon(
             aspectRatio.isOriginal
-                ? Icons.crop_free
-                : aspectRatio.height > aspectRatio.width
-                    ? Icons.crop_portrait
-                    : Icons.crop_landscape,
-            size: 32,
+                ? FontAwesomeIcons.expand
+                : FontAwesomeIcons.cropSimple,
+            size: 28,
             color: AppColors.accent,
           ),
           const SizedBox(height: 4),
@@ -602,8 +537,8 @@ class _AspectRatioIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (aspectRatio.isOriginal) {
-      return const Icon(Icons.fullscreen,
-          size: 22, color: AppColors.textSecondary);
+      return const FaIcon(FontAwesomeIcons.expand,
+          size: 18, color: AppColors.textSecondary);
     }
 
     const maxDim = 20.0;

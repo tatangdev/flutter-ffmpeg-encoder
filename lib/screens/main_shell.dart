@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../services/compression_queue.dart';
 import '../services/database_service.dart';
@@ -62,7 +63,7 @@ class _MainShellState extends State<MainShell> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(isSelected ? selectedIcon : icon, color: color, size: 24),
+              FaIcon(isSelected ? selectedIcon : icon, color: color, size: 20),
               const SizedBox(height: 2),
               Text(label, style: TextStyle(fontSize: 11, color: color)),
             ],
@@ -111,9 +112,9 @@ class _MainShellState extends State<MainShell> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildNavItem(Icons.compress, Icons.compress, 'Compress', 0),
-              _buildNavItem(Icons.queue_outlined, Icons.queue, 'Queue', 1),
-              _buildNavItem(Icons.settings_outlined, Icons.settings, 'Settings', 2),
+              _buildNavItem(FontAwesomeIcons.compress, FontAwesomeIcons.compress, 'Compress', 0),
+              _buildNavItem(FontAwesomeIcons.listUl, FontAwesomeIcons.listUl, 'Queue', 1),
+              _buildNavItem(FontAwesomeIcons.gear, FontAwesomeIcons.gear, 'Settings', 2),
             ],
           ),
         ),
