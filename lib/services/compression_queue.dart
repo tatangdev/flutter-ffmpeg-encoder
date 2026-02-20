@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:ffmpeg_kit_flutter_new/ffmpeg_kit.dart';
 import 'package:ffmpeg_kit_flutter_new/return_code.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 
 import '../models/compression_job.dart';
 import '../models/compression_result.dart';
@@ -17,16 +18,48 @@ class CompressionQueue extends ChangeNotifier {
   final NotificationService _notificationService;
   final List<CompressionJob> _jobs = [];
   Timer? _progressTimer;
+  double _lastReportedProgress = 0.0;
 
   List<CompressionJob> get jobs => List.unmodifiable(_jobs);
 
   CompressionQueue(this._databaseService, this._notificationService);
 
   Future<void> init() async {
+    FlutterForegroundTask.init(
+      androidNotificationOptions: AndroidNotificationOptions(
+        channelId: 'compression_foreground',
+        channelName: 'Video Compression',
+        channelDescription: 'Keeps compression running in background',
+        channelImportance: NotificationChannelImportance.LOW,
+        priority: NotificationPriority.LOW,
+      ),
+      iosNotificationOptions: const IOSNotificationOptions(),
+      foregroundTaskOptions: ForegroundTaskOptions(
+        eventAction: ForegroundTaskEventAction.nothing(),
+        allowWakeLock: true,
+        allowWifiLock: true,
+      ),
+    );
     await _databaseService.markInterruptedJobsAsFailed();
     final rows = await _databaseService.getAllJobs();
     _jobs.addAll(rows.map((row) => CompressionJob.fromMap(row)));
     notifyListeners();
+  }
+
+  Future<void> _startForegroundService(String fileName) async {
+    await FlutterForegroundTask.startService(
+      notificationTitle: 'Compressing: $fileName',
+      notificationText: 'Encoding in progress...',
+    );
+  }
+
+  Future<void> _stopForegroundServiceIfIdle() async {
+    final hasActive = _jobs.any(
+      (j) => j.status == JobStatus.compressing || j.status == JobStatus.pending,
+    );
+    if (!hasActive) {
+      await FlutterForegroundTask.stopService();
+    }
   }
 
   bool _isProcessing = false;
@@ -53,8 +86,10 @@ class CompressionQueue extends ChangeNotifier {
 
   Future<void> _startJob(CompressionJob job) async {
     job.status = JobStatus.compressing;
+    _lastReportedProgress = 0.0;
     await _databaseService.updateJob(job.toMap());
     notifyListeners();
+    await _startForegroundService(job.fileName);
 
     final stopwatch = Stopwatch()..start();
 
@@ -129,17 +164,20 @@ class CompressionQueue extends ChangeNotifier {
         },
       );
 
-      // Throttle UI updates to ~4fps instead of every FFmpeg stats callback
+      // Throttle UI updates — only when progress changes by >= 1%
       _progressTimer?.cancel();
       _progressTimer = Timer.periodic(
         const Duration(milliseconds: 250),
         (_) {
-          notifyListeners();
-          _notificationService.showProgress(
-            jobId: job.id,
-            fileName: job.fileName,
-            progress: job.progress,
-          );
+          if ((job.progress - _lastReportedProgress).abs() >= 0.01) {
+            _lastReportedProgress = job.progress;
+            notifyListeners();
+            _notificationService.showProgress(
+              jobId: job.id,
+              fileName: job.fileName,
+              progress: job.progress,
+            );
+          }
         },
       );
 
@@ -178,6 +216,7 @@ class CompressionQueue extends ChangeNotifier {
     job.session = null;
     await _databaseService.updateJob(job.toMap());
     notifyListeners();
+    await _stopForegroundServiceIfIdle();
   }
 
   Future<void> cancelJob(String jobId) async {
@@ -190,6 +229,7 @@ class CompressionQueue extends ChangeNotifier {
       await _notificationService.cancel(job.id);
       await _databaseService.updateJob(job.toMap());
       notifyListeners();
+      await _stopForegroundServiceIfIdle();
       _processNext();
     }
   }
@@ -209,6 +249,7 @@ class CompressionQueue extends ChangeNotifier {
         _notificationService.cancel(job.id);
       }
     }
+    FlutterForegroundTask.stopService();
     _databaseService.close();
     super.dispose();
   }

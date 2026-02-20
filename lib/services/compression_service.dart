@@ -17,6 +17,7 @@ class CompressionService {
     final args = <String>[
       '-i', _quote(inputPath),
       '-y',
+      '-threads', '0',
     ];
 
     // Video filter chain

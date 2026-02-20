@@ -3,7 +3,7 @@ import 'package:sqflite/sqflite.dart';
 
 class DatabaseService {
   static const _dbName = 'devcoder.db';
-  static const _dbVersion = 2;
+  static const _dbVersion = 3;
   static const _jobsTable = 'compression_jobs';
   static const _draftsTable = 'drafts';
 
@@ -55,6 +55,7 @@ class DatabaseService {
         result_original_deleted     INTEGER DEFAULT 0
       )
     ''');
+    await _createJobIndices(db);
     await _createDraftsTable(db);
   }
 
@@ -62,6 +63,18 @@ class DatabaseService {
     if (oldVersion < 2) {
       await _createDraftsTable(db);
     }
+    if (oldVersion < 3) {
+      await _createJobIndices(db);
+    }
+  }
+
+  Future<void> _createJobIndices(Database db) async {
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_jobs_status ON $_jobsTable(status)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_jobs_created_at ON $_jobsTable(created_at DESC)',
+    );
   }
 
   Future<void> _createDraftsTable(Database db) async {
@@ -115,7 +128,7 @@ class DatabaseService {
 
   Future<List<Map<String, dynamic>>> getAllJobs() async {
     final db = await database;
-    return db.query(_jobsTable, orderBy: 'created_at DESC');
+    return db.query(_jobsTable, orderBy: 'created_at DESC', limit: 50);
   }
 
   Future<void> markInterruptedJobsAsFailed() async {

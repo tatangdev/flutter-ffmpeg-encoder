@@ -49,7 +49,7 @@ class NotificationService {
     await _plugin.show(
       _notificationId(jobId),
       'Compressing: $fileName',
-      '${(progress * 100).toStringAsFixed(0)}% complete',
+      '${(progress * 100).toStringAsFixed(1)}% complete',
       NotificationDetails(android: androidDetails),
     );
   }

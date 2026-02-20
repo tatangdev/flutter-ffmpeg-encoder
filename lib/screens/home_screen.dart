@@ -61,6 +61,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _checkPermissions();
     _loadDraft();
     _permissionService.requestNotificationPermission();
+    _permissionService.requestBatteryOptimizationExemption();
   }
 
   Future<void> _loadDraft() async {

@@ -46,7 +46,13 @@ class _QueueScreenState extends State<QueueScreen> {
               padding: const EdgeInsets.all(20),
               itemCount: jobs.length,
               separatorBuilder: (_, _) => const SizedBox(height: 12),
-              itemBuilder: (context, index) => _buildJobCard(jobs[index]),
+              itemBuilder: (context, index) {
+                final job = jobs[index];
+                return KeyedSubtree(
+                  key: ValueKey(job.id),
+                  child: _buildJobCard(job),
+                );
+              },
             ),
     );
   }

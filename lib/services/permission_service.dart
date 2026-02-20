@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class PermissionService {
@@ -33,6 +34,15 @@ class PermissionService {
     if (!Platform.isAndroid) return true;
     final status = await Permission.notification.request();
     return status.isGranted;
+  }
+
+  Future<void> requestBatteryOptimizationExemption() async {
+    if (!Platform.isAndroid) return;
+    final isIgnoring =
+        await FlutterForegroundTask.isIgnoringBatteryOptimizations;
+    if (!isIgnoring) {
+      await FlutterForegroundTask.requestIgnoreBatteryOptimization();
+    }
   }
 
   /// Checks whether storage permissions are already granted.
