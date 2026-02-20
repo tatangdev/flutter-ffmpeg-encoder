@@ -22,40 +22,80 @@ class CompressionService {
   CompressionService(this._fileService);
 
   /// Builds the FFmpeg argument string from [settings].
-  String buildCommand({
+  static String buildCommandStatic({
     required String inputPath,
     required String outputPath,
     required CompressionSettings settings,
   }) {
+    final p = settings.resolvedPreset;
     final args = <String>[
-      '-i',
-      inputPath,
-      '-y', // overwrite output
+      '-i', inputPath,
+      '-y',
     ];
 
-    // Scale filter (skip for original resolution)
-    if (settings.resolution != VideoResolution.original) {
+    // Video filter chain
+    final outW = settings.resolvedWidth;
+    final outH = settings.resolvedHeight;
+    if (settings.aspectRatio.isOriginal) {
+      // Keep original resolution, only force fps
+      args.addAll(['-vf', 'fps=${p.fps}']);
+    } else if (settings.fit == VideoFit.cover) {
+      // Fill frame and crop overflow
       args.addAll([
         '-vf',
-        'scale=${settings.resolution.width}:${settings.resolution.height}'
-            ':force_original_aspect_ratio=decrease,'
-            'pad=${settings.resolution.width}:${settings.resolution.height}'
-            ':(ow-iw)/2:(oh-ih)/2',
+        'scale=$outW:$outH:force_original_aspect_ratio=increase,'
+            'crop=$outW:$outH,'
+            'setsar=1,'
+            'fps=${p.fps}',
+      ]);
+    } else {
+      // Fit entire video, pad with black bars
+      args.addAll([
+        '-vf',
+        'scale=$outW:$outH:force_original_aspect_ratio=decrease,'
+            'pad=$outW:$outH:(ow-iw)/2:(oh-ih)/2,'
+            'setsar=1,'
+            'fps=${p.fps}',
       ]);
     }
 
-    // Video codec and quality
+    // Video codec, rate control, and H.264 profile
     args.addAll([
-      '-c:v', settings.videoCodec,
-      '-crf', settings.quality.crf.toString(),
-      '-preset', settings.preset.value,
+      '-c:v', p.videoCodec,
+      '-crf', p.crf.toString(),
+      '-preset', p.preset,
+      '-profile:v', p.profile,
+      '-level:v', p.level,
+      '-pix_fmt', p.pixFmt,
     ]);
 
-    // Audio codec and bitrate
+    // BT.709 color metadata
     args.addAll([
-      '-c:a', settings.audioCodec,
-      '-b:a', '${settings.audioBitrate}k',
+      '-color_primaries', '1',
+      '-color_trc', '1',
+      '-colorspace', '1',
     ]);
+
+    // Keyframe interval (2 seconds at target fps)
+    args.addAll(['-g', p.keyframeInterval.toString()]);
+
+    // VBV rate limiting (e.g. TikTok balanced)
+    if (p.maxrateKbps != null && p.bufsizeKbps != null) {
+      args.addAll([
+        '-maxrate', '${p.maxrateKbps}k',
+        '-bufsize', '${p.bufsizeKbps}k',
+      ]);
+    }
+
+    // Audio
+    args.addAll([
+      '-c:a', 'aac',
+      '-b:a', '${p.audioBitrate}k',
+      '-ar', '44100',
+    ]);
+
+    // Fast start for streaming/upload
+    args.addAll(['-movflags', '+faststart']);
 
     args.add(outputPath);
     return args.join(' ');
@@ -83,7 +123,7 @@ class CompressionService {
     final outputPath = FileUtils.generateOutputPath(inputPath, outputDir);
 
     // 3. Build command
-    final command = buildCommand(
+    final command = buildCommandStatic(
       inputPath: inputPath,
       outputPath: outputPath,
       settings: settings,

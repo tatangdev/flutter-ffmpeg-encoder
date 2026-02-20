@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 import '../models/video_info.dart';
@@ -6,58 +8,65 @@ import '../utils/file_utils.dart';
 
 class VideoInfoCard extends StatelessWidget {
   final VideoInfo info;
+  final File? thumbnail;
 
-  const VideoInfoCard({super.key, required this.info});
+  const VideoInfoCard({super.key, required this.info, this.thumbnail});
 
   @override
   Widget build(BuildContext context) {
+    final stats = <String>[
+      info.formattedSize,
+      if (info.duration != null) FileUtils.formatDuration(info.duration!),
+      info.resolution,
+    ];
+
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        padding: const EdgeInsets.all(16),
+        child: Row(
           children: [
-            const Text(
-              'Video Details',
-              style: AppTextStyles.textLgSemibold,
+            // Thumbnail
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: SizedBox(
+                width: 56,
+                height: 56,
+                child: thumbnail != null
+                    ? Image.file(thumbnail!, fit: BoxFit.cover)
+                    : Container(
+                        color: AppColors.bgSecondary,
+                        child: const Icon(Icons.videocam,
+                            size: 24, color: AppColors.textTertiary),
+                      ),
+              ),
             ),
-            const SizedBox(height: 16),
-            _row(Icons.insert_drive_file, 'File', info.fileName),
-            _row(Icons.sd_storage, 'Size', info.formattedSize),
-            if (info.duration != null)
-              _row(Icons.timer, 'Duration',
-                  FileUtils.formatDuration(info.duration!)),
-            _row(Icons.aspect_ratio, 'Resolution', info.resolution),
-            if (info.videoCodec != null)
-              _row(Icons.videocam, 'Codec', info.videoCodec!),
-            if (info.format != null)
-              _row(Icons.folder_open, 'Format', info.format!),
+            const SizedBox(width: 12),
+
+            // File name + stats
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    info.fileName,
+                    style: AppTextStyles.textMdSemibold,
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    stats.join(' \u00b7 '),
+                    style: AppTextStyles.textSmMedium.copyWith(
+                      color: AppColors.textTertiary,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _row(IconData icon, String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: AppColors.bgSecondary,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, size: 18, color: AppColors.textTertiary),
-          ),
-          const SizedBox(width: 12),
-          Text('$label: ', style: AppTextStyles.textSmSemibold.copyWith(
-            color: AppColors.textPrimary,
-          )),
-          Expanded(child: Text(value, style: AppTextStyles.textSmMedium, overflow: TextOverflow.ellipsis)),
-        ],
       ),
     );
   }

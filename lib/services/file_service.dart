@@ -1,6 +1,8 @@
 import 'dart:io';
 
+import 'package:ffmpeg_kit_flutter_new/ffmpeg_kit.dart';
 import 'package:ffmpeg_kit_flutter_new/ffprobe_kit.dart';
+import 'package:ffmpeg_kit_flutter_new/return_code.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -85,6 +87,27 @@ class FileService {
       bitrate: bitrate,
       format: format,
     );
+  }
+
+  /// Extracts a single frame from the video as a JPEG thumbnail.
+  /// Returns the thumbnail [File], or null if extraction fails.
+  Future<File?> extractThumbnail(String videoPath) async {
+    final tempDir = await getTemporaryDirectory();
+    final thumbPath = p.join(
+      tempDir.path,
+      'thumb_${DateTime.now().millisecondsSinceEpoch}.jpg',
+    );
+
+    final session = await FFmpegKit.execute(
+      '-i $videoPath -ss 00:00:01 -vframes 1 -q:v 2 -y $thumbPath',
+    );
+    final returnCode = await session.getReturnCode();
+
+    if (ReturnCode.isSuccess(returnCode)) {
+      final file = File(thumbPath);
+      if (await file.exists()) return file;
+    }
+    return null;
   }
 
   /// Deletes the file at [filePath].

@@ -1,209 +1,305 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart' as p;
 
+import '../models/compression_job.dart';
+import '../models/compression_settings.dart';
+import '../services/compression_queue.dart';
 import '../theme/app_typography.dart';
 import '../utils/file_utils.dart';
 
 class QueueScreen extends StatefulWidget {
-  const QueueScreen({super.key});
+  final CompressionQueue compressionQueue;
+
+  const QueueScreen({super.key, required this.compressionQueue});
 
   @override
   State<QueueScreen> createState() => _QueueScreenState();
 }
 
 class _QueueScreenState extends State<QueueScreen> {
-  List<FileSystemEntity> _files = [];
-  bool _isLoading = true;
-
   @override
   void initState() {
     super.initState();
-    _loadHistory();
+    widget.compressionQueue.addListener(_onQueueChanged);
   }
 
-  Future<void> _loadHistory() async {
-    setState(() => _isLoading = true);
+  @override
+  void dispose() {
+    widget.compressionQueue.removeListener(_onQueueChanged);
+    super.dispose();
+  }
 
-    final files = <FileSystemEntity>[];
-
-    // Scan known output directories for compressed files
-    final dirs = <String>[];
-
-    // Shared Movies directory
-    const moviesPath = '/storage/emulated/0/Movies/VideoCompressor';
-    if (await Directory(moviesPath).exists()) {
-      dirs.add(moviesPath);
-    }
-
-    // App external storage
-    final extDir = await getExternalStorageDirectory();
-    if (extDir != null) {
-      final compressedDir = Directory(p.join(extDir.path, 'compressed'));
-      if (await compressedDir.exists()) {
-        dirs.add(compressedDir.path);
-      }
-    }
-
-    for (final dirPath in dirs) {
-      final dir = Directory(dirPath);
-      await for (final entity in dir.list()) {
-        if (entity is File && entity.path.endsWith('.mp4')) {
-          files.add(entity);
-        }
-      }
-    }
-
-    // Sort by modification time (newest first)
-    files.sort((a, b) {
-      final aStat = a.statSync();
-      final bStat = b.statSync();
-      return bStat.modified.compareTo(aStat.modified);
-    });
-
-    setState(() {
-      _files = files;
-      _isLoading = false;
-    });
+  void _onQueueChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
+    final jobs = widget.compressionQueue.jobs;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Queue'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadHistory,
+      ),
+      body: jobs.isEmpty
+          ? _buildEmptyState()
+          : ListView.separated(
+              padding: const EdgeInsets.all(20),
+              itemCount: jobs.length,
+              separatorBuilder: (_, _) => const SizedBox(height: 12),
+              itemBuilder: (context, index) => _buildJobCard(jobs[index]),
+            ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              color: AppColors.bgSecondary,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: const Icon(Icons.queue,
+                size: 40, color: AppColors.textQuaternary),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'No compression jobs',
+            style: AppTextStyles.textMdSemibold.copyWith(
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Start compressing a video to see progress here',
+            style: AppTextStyles.textSmMedium.copyWith(
+              color: AppColors.textTertiary,
+            ),
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _files.isEmpty
-              ? Center(
+    );
+  }
+
+  Widget _buildJobCard(CompressionJob job) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header row: thumbnail + info + action button
+            Row(
+              children: [
+                _buildThumbnail(job),
+                const SizedBox(width: 12),
+                Expanded(
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        width: 80,
-                        height: 80,
-                        decoration: BoxDecoration(
-                          color: AppColors.bgSecondary,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: const Icon(Icons.queue,
-                            size: 40, color: AppColors.textQuaternary),
-                      ),
-                      const SizedBox(height: 16),
                       Text(
-                        'No compressed videos yet',
-                        style: AppTextStyles.textMdRegular.copyWith(
-                          color: AppColors.textTertiary,
+                        job.fileName,
+                        style: AppTextStyles.textMdSemibold,
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        _statusLabel(job),
+                        style: AppTextStyles.textSmMedium.copyWith(
+                          color: _statusColor(job.status),
                         ),
                       ),
                     ],
                   ),
-                )
-              : RefreshIndicator(
-                  onRefresh: _loadHistory,
-                  child: ListView.separated(
-                    padding: const EdgeInsets.all(20),
-                    itemCount: _files.length,
-                    separatorBuilder: (_, _) => const SizedBox(height: 12),
-                    itemBuilder: (context, index) {
-                      final file = _files[index] as File;
-                      final stat = file.statSync();
-                      final name = p.basename(file.path);
-                      final size = FileUtils.formatFileSize(stat.size);
-                      final date = _formatDate(stat.modified);
-
-                      return Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 48,
-                                height: 48,
-                                decoration: BoxDecoration(
-                                  color: AppColors.bgSecondary,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: const Icon(Icons.video_file,
-                                    color: AppColors.accent),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      name,
-                                      style: AppTextStyles.textMdSemibold,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      '$size  •  $date',
-                                      style: AppTextStyles.textSmMedium.copyWith(
-                                        color: AppColors.textTertiary,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.delete_outline,
-                                    color: AppColors.textQuaternary),
-                                onPressed: () => _confirmDelete(file),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
                 ),
-    );
-  }
+                if (job.status == JobStatus.compressing)
+                  IconButton(
+                    icon: const Icon(Icons.cancel_outlined,
+                        color: AppColors.textQuaternary),
+                    onPressed: () =>
+                        widget.compressionQueue.cancelJob(job.id),
+                  ),
+                if (job.status == JobStatus.completed ||
+                    job.status == JobStatus.failed ||
+                    job.status == JobStatus.cancelled)
+                  IconButton(
+                    icon: const Icon(Icons.close,
+                        color: AppColors.textQuaternary),
+                    onPressed: () =>
+                        widget.compressionQueue.removeJob(job.id),
+                  ),
+              ],
+            ),
 
-  String _formatDate(DateTime date) {
-    return '${date.year}-${date.month.toString().padLeft(2, '0')}'
-        '-${date.day.toString().padLeft(2, '0')} '
-        '${date.hour.toString().padLeft(2, '0')}:'
-        '${date.minute.toString().padLeft(2, '0')}';
-  }
+            // Progress bar (only while compressing)
+            if (job.status == JobStatus.compressing) ...[
+              const SizedBox(height: 12),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(value: job.progress),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '${(job.progress * 100).toStringAsFixed(1)}%',
+                style: AppTextStyles.textSmMedium.copyWith(
+                  color: AppColors.textTertiary,
+                ),
+              ),
+            ],
 
-  Future<void> _confirmDelete(File file) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete file?',
-            style: AppTextStyles.textLgSemibold),
-        content: Text(
-          'Delete ${p.basename(file.path)}?',
-          style: AppTextStyles.textMdRegular,
+            // Result summary (completed)
+            if (job.status == JobStatus.completed &&
+                job.result != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                '${FileUtils.formatFileSize(job.result!.originalSizeBytes ?? 0)}'
+                ' \u2192 ${FileUtils.formatFileSize(job.result!.compressedSizeBytes ?? 0)}'
+                '  \u2022  Saved ${job.result!.savedPercentage.toStringAsFixed(1)}%',
+                style: AppTextStyles.textSmMedium.copyWith(
+                  color: AppColors.textBrand,
+                ),
+              ),
+            ],
+
+            // Error message (failed)
+            if (job.status == JobStatus.failed &&
+                job.result?.errorMessage != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                job.result!.errorMessage!,
+                style: AppTextStyles.textSmMedium.copyWith(
+                  color: Theme.of(context).colorScheme.error,
+                ),
+              ),
+            ],
+
+            // Cancelled
+            if (job.status == JobStatus.cancelled) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Compression was cancelled',
+                style: AppTextStyles.textSmMedium.copyWith(
+                  color: AppColors.textTertiary,
+                ),
+              ),
+            ],
+
+            // Details row
+            const SizedBox(height: 8),
+            const Divider(height: 1),
+            const SizedBox(height: 8),
+            _buildDetailsRow(job),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete'),
-          ),
-        ],
       ),
     );
+  }
 
-    if (confirmed == true) {
-      await file.delete();
-      _loadHistory();
+  Widget _buildThumbnail(CompressionJob job) {
+    final isFinished = job.status == JobStatus.completed;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: SizedBox(
+        width: 48,
+        height: 48,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // Thumbnail or placeholder
+            if (job.thumbnailFile != null)
+              Image.file(
+                job.thumbnailFile!,
+                fit: BoxFit.cover,
+              )
+            else
+              Container(
+                color: AppColors.bgSecondary,
+                child: const Icon(Icons.videocam,
+                    size: 24, color: AppColors.textTertiary),
+              ),
+
+            // Checkmark overlay when completed
+            if (isFinished)
+              Container(
+                color: AppColors.accent.withValues(alpha: 0.7),
+                child: const Icon(Icons.check,
+                    color: Colors.white, size: 24),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailsRow(CompressionJob job) {
+    final settings = job.settings;
+    final quality = settings.tier.label;
+
+    String preset;
+    if (settings.exportMode == ExportMode.custom) {
+      preset = settings.customResolution.description;
+    } else {
+      preset = settings.platform.label;
     }
+
+    return Row(
+      children: [
+        Expanded(child: _detailChip(Icons.tune, preset)),
+        Expanded(child: _detailChip(Icons.high_quality_outlined, quality)),
+        Expanded(child: _detailChip(Icons.folder_outlined, _shortenPath(job.outputDir))),
+      ],
+    );
+  }
+
+  Widget _detailChip(IconData icon, String label) {
+    return Row(
+      children: [
+        Icon(icon, size: 14, color: AppColors.textQuaternary),
+        const SizedBox(width: 4),
+        Expanded(
+          child: Text(
+            label,
+            style: AppTextStyles.textSmMedium.copyWith(
+              color: AppColors.textTertiary,
+              fontSize: 12,
+            ),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _shortenPath(String path) {
+    final parts = path.split('/');
+    if (parts.length <= 3) return path;
+    return '.../${parts.sublist(parts.length - 2).join('/')}';
+  }
+
+  String _statusLabel(CompressionJob job) {
+    return switch (job.status) {
+      JobStatus.pending => 'Waiting...',
+      JobStatus.compressing => 'Compressing...',
+      JobStatus.completed => 'Completed',
+      JobStatus.failed => 'Failed',
+      JobStatus.cancelled => 'Cancelled',
+    };
+  }
+
+  Color _statusColor(JobStatus status) {
+    return switch (status) {
+      JobStatus.pending => AppColors.textTertiary,
+      JobStatus.compressing => AppColors.accent,
+      JobStatus.completed => AppColors.textBrand,
+      JobStatus.failed => Theme.of(context).colorScheme.error,
+      JobStatus.cancelled => AppColors.textTertiary,
+    };
   }
 }

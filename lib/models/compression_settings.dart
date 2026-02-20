@@ -1,71 +1,249 @@
-enum VideoResolution {
-  p480(640, 480, '480p'),
-  p720(1280, 720, '720p'),
-  p1080(1920, 1080, '1080p'),
-  original(0, 0, 'Original');
+enum ExportMode {
+  custom('Custom'),
+  socialMedia('Social Media');
 
-  const VideoResolution(this.width, this.height, this.label);
+  const ExportMode(this.label);
+  final String label;
+}
+
+enum VideoPlatform {
+  instagramPost('Instagram Post'),
+  instagramReels('Instagram Reels'),
+  tiktok('TikTok'),
+  youtubeShorts('YouTube Shorts');
+
+  const VideoPlatform(this.label);
+  final String label;
+}
+
+enum CustomResolution {
+  fhd(1080, 'FHD', '1080p Full HD'),
+  qhd(1440, '2K', '1440p QHD'),
+  uhd(2160, '4K', '2160p Ultra HD');
+
+  const CustomResolution(this.shortSide, this.label, this.description);
+  final int shortSide;
+  final String label;
+  final String description;
+}
+
+enum VideoAspectRatio {
+  original(0, 0, 'Original'),
+  landscape4x3(1440, 1080, '4:3'),
+  portrait4x3(1080, 1440, '3:4'),
+  landscape16x9(1920, 1080, '16:9'),
+  portrait16x9(1080, 1920, '9:16');
+
+  const VideoAspectRatio(this.width, this.height, this.label);
   final int width;
   final int height;
   final String label;
+
+  bool get isOriginal => this == original;
 }
 
-enum VideoQuality {
-  low(32, 'Low'),
-  medium(28, 'Medium'),
-  high(23, 'High');
+enum VideoFit {
+  contain('Fit', 'Fits entire video, adds black bars'),
+  cover('Fill & Crop', 'Fills frame, crops overflow');
 
-  const VideoQuality(this.crf, this.label);
+  const VideoFit(this.label, this.description);
+  final String label;
+  final String description;
+}
+
+enum QualityTier {
+  best('Best Quality'),
+  balanced('Balanced');
+
+  const QualityTier(this.label);
+  final String label;
+}
+
+class EncodingPreset {
+  final String videoCodec;
   final int crf;
-  final String label;
+  final String preset;
+  final String profile;
+  final String level;
+  final String pixFmt;
+  final int audioBitrate;
+  final int fps;
+  final int keyframeInterval;
+  final int? maxrateKbps;
+  final int? bufsizeKbps;
+
+  const EncodingPreset({
+    required this.videoCodec,
+    required this.crf,
+    required this.preset,
+    required this.profile,
+    required this.level,
+    required this.pixFmt,
+    required this.audioBitrate,
+    required this.fps,
+    required this.keyframeInterval,
+    this.maxrateKbps,
+    this.bufsizeKbps,
+  });
 }
 
-enum CompressionPreset {
-  ultrafast('ultrafast', 'Ultrafast'),
-  fast('fast', 'Fast'),
-  medium('medium', 'Medium'),
-  slow('slow', 'Slow');
+class PlatformPresets {
+  PlatformPresets._();
 
-  const CompressionPreset(this.value, this.label);
-  final String value;
-  final String label;
+  static EncodingPreset resolve(VideoPlatform platform, QualityTier tier) {
+    return switch ((platform, tier)) {
+      (VideoPlatform.instagramPost, QualityTier.best) => const EncodingPreset(
+        videoCodec: 'libx264', crf: 18, preset: 'slow',
+        profile: 'high', level: '4.1', pixFmt: 'yuv420p',
+        audioBitrate: 192, fps: 30, keyframeInterval: 60,
+      ),
+      (VideoPlatform.instagramPost, QualityTier.balanced) => const EncodingPreset(
+        videoCodec: 'libx264', crf: 23, preset: 'slower',
+        profile: 'high', level: '4.1', pixFmt: 'yuv420p',
+        audioBitrate: 192, fps: 30, keyframeInterval: 60,
+      ),
+      (VideoPlatform.instagramReels, QualityTier.best) => const EncodingPreset(
+        videoCodec: 'libx264', crf: 18, preset: 'slow',
+        profile: 'high', level: '4.1', pixFmt: 'yuv420p',
+        audioBitrate: 192, fps: 30, keyframeInterval: 60,
+      ),
+      (VideoPlatform.instagramReels, QualityTier.balanced) => const EncodingPreset(
+        videoCodec: 'libx264', crf: 23, preset: 'slower',
+        profile: 'high', level: '4.1', pixFmt: 'yuv420p',
+        audioBitrate: 192, fps: 30, keyframeInterval: 60,
+      ),
+      (VideoPlatform.tiktok, QualityTier.best) => const EncodingPreset(
+        videoCodec: 'libx264', crf: 18, preset: 'slow',
+        profile: 'high', level: '4.1', pixFmt: 'yuv420p',
+        audioBitrate: 128, fps: 30, keyframeInterval: 60,
+      ),
+      (VideoPlatform.tiktok, QualityTier.balanced) => const EncodingPreset(
+        videoCodec: 'libx264', crf: 24, preset: 'slower',
+        profile: 'high', level: '4.1', pixFmt: 'yuv420p',
+        audioBitrate: 128, fps: 30, keyframeInterval: 60,
+        maxrateKbps: 10000, bufsizeKbps: 20000,
+      ),
+      (VideoPlatform.youtubeShorts, QualityTier.best) => const EncodingPreset(
+        videoCodec: 'libx264', crf: 18, preset: 'slow',
+        profile: 'high', level: '4.1', pixFmt: 'yuv420p',
+        audioBitrate: 192, fps: 30, keyframeInterval: 60,
+      ),
+      (VideoPlatform.youtubeShorts, QualityTier.balanced) => const EncodingPreset(
+        videoCodec: 'libx264', crf: 23, preset: 'slower',
+        profile: 'high', level: '4.1', pixFmt: 'yuv420p',
+        audioBitrate: 192, fps: 30, keyframeInterval: 60,
+      ),
+    };
+  }
+}
+
+class CustomPresets {
+  CustomPresets._();
+
+  static EncodingPreset resolve(CustomResolution resolution, QualityTier tier) {
+    return switch ((resolution, tier)) {
+      (CustomResolution.fhd, QualityTier.best) => const EncodingPreset(
+        videoCodec: 'libx264', crf: 18, preset: 'slow',
+        profile: 'high', level: '4.1', pixFmt: 'yuv420p',
+        audioBitrate: 192, fps: 30, keyframeInterval: 60,
+      ),
+      (CustomResolution.fhd, QualityTier.balanced) => const EncodingPreset(
+        videoCodec: 'libx264', crf: 23, preset: 'medium',
+        profile: 'high', level: '4.1', pixFmt: 'yuv420p',
+        audioBitrate: 128, fps: 30, keyframeInterval: 60,
+      ),
+      (CustomResolution.qhd, QualityTier.best) => const EncodingPreset(
+        videoCodec: 'libx264', crf: 18, preset: 'slow',
+        profile: 'high', level: '5.0', pixFmt: 'yuv420p',
+        audioBitrate: 256, fps: 30, keyframeInterval: 60,
+      ),
+      (CustomResolution.qhd, QualityTier.balanced) => const EncodingPreset(
+        videoCodec: 'libx264', crf: 22, preset: 'medium',
+        profile: 'high', level: '5.0', pixFmt: 'yuv420p',
+        audioBitrate: 192, fps: 30, keyframeInterval: 60,
+      ),
+      (CustomResolution.uhd, QualityTier.best) => const EncodingPreset(
+        videoCodec: 'libx264', crf: 17, preset: 'slow',
+        profile: 'high', level: '5.1', pixFmt: 'yuv420p',
+        audioBitrate: 320, fps: 30, keyframeInterval: 60,
+      ),
+      (CustomResolution.uhd, QualityTier.balanced) => const EncodingPreset(
+        videoCodec: 'libx264', crf: 21, preset: 'medium',
+        profile: 'high', level: '5.1', pixFmt: 'yuv420p',
+        audioBitrate: 256, fps: 30, keyframeInterval: 60,
+      ),
+    };
+  }
 }
 
 class CompressionSettings {
-  final VideoResolution resolution;
-  final VideoQuality quality;
-  final CompressionPreset preset;
-  final String videoCodec;
-  final String audioCodec;
-  final int audioBitrate;
+  final ExportMode exportMode;
+  final VideoPlatform platform;
+  final CustomResolution customResolution;
+  final QualityTier tier;
+  final VideoAspectRatio aspectRatio;
+  final VideoFit fit;
   final bool deleteOriginal;
 
   const CompressionSettings({
-    this.resolution = VideoResolution.p720,
-    this.quality = VideoQuality.medium,
-    this.preset = CompressionPreset.medium,
-    this.videoCodec = 'libx264',
-    this.audioCodec = 'aac',
-    this.audioBitrate = 128,
+    this.exportMode = ExportMode.custom,
+    this.platform = VideoPlatform.instagramPost,
+    this.customResolution = CustomResolution.fhd,
+    this.tier = QualityTier.best,
+    this.aspectRatio = VideoAspectRatio.original,
+    this.fit = VideoFit.contain,
     this.deleteOriginal = false,
   });
 
+  /// Rounds to nearest even number (required for H.264 yuv420p).
+  static int _roundEven(int v) => v.isOdd ? v + 1 : v;
+
+  /// Resolved output width in pixels. Returns 0 for original.
+  int get resolvedWidth {
+    if (aspectRatio.isOriginal) return 0;
+    if (exportMode == ExportMode.socialMedia) {
+      // Social media: width always capped at 1080
+      return 1080;
+    }
+    // Custom: scale based on short side
+    final scale = customResolution.shortSide / 1080;
+    return _roundEven((aspectRatio.width * scale).round());
+  }
+
+  /// Resolved output height in pixels. Returns 0 for original.
+  int get resolvedHeight {
+    if (aspectRatio.isOriginal) return 0;
+    if (exportMode == ExportMode.socialMedia) {
+      // Social media: derive height from 1080 width + ratio
+      return _roundEven(
+        (1080 * aspectRatio.height / aspectRatio.width).round(),
+      );
+    }
+    // Custom: scale based on short side
+    final scale = customResolution.shortSide / 1080;
+    return _roundEven((aspectRatio.height * scale).round());
+  }
+
+  EncodingPreset get resolvedPreset => exportMode == ExportMode.socialMedia
+      ? PlatformPresets.resolve(platform, tier)
+      : CustomPresets.resolve(customResolution, tier);
+
   CompressionSettings copyWith({
-    VideoResolution? resolution,
-    VideoQuality? quality,
-    CompressionPreset? preset,
-    String? videoCodec,
-    String? audioCodec,
-    int? audioBitrate,
+    ExportMode? exportMode,
+    VideoPlatform? platform,
+    CustomResolution? customResolution,
+    QualityTier? tier,
+    VideoAspectRatio? aspectRatio,
+    VideoFit? fit,
     bool? deleteOriginal,
   }) {
     return CompressionSettings(
-      resolution: resolution ?? this.resolution,
-      quality: quality ?? this.quality,
-      preset: preset ?? this.preset,
-      videoCodec: videoCodec ?? this.videoCodec,
-      audioCodec: audioCodec ?? this.audioCodec,
-      audioBitrate: audioBitrate ?? this.audioBitrate,
+      exportMode: exportMode ?? this.exportMode,
+      platform: platform ?? this.platform,
+      customResolution: customResolution ?? this.customResolution,
+      tier: tier ?? this.tier,
+      aspectRatio: aspectRatio ?? this.aspectRatio,
+      fit: fit ?? this.fit,
       deleteOriginal: deleteOriginal ?? this.deleteOriginal,
     );
   }
