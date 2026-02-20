@@ -29,6 +29,12 @@ class PermissionService {
     return true;
   }
 
+  Future<bool> requestNotificationPermission() async {
+    if (!Platform.isAndroid) return true;
+    final status = await Permission.notification.request();
+    return status.isGranted;
+  }
+
   /// Checks whether storage permissions are already granted.
   Future<bool> hasStoragePermissions() async {
     if (!Platform.isAndroid) return true;

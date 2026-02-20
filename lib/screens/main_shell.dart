@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../services/compression_queue.dart';
 import '../services/database_service.dart';
+import '../services/notification_service.dart';
 import '../theme/app_typography.dart';
 import 'queue_screen.dart';
 import 'home_screen.dart';
@@ -17,6 +18,7 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> {
   int _currentIndex = 0;
   late final DatabaseService _databaseService;
+  late final NotificationService _notificationService;
   late final CompressionQueue _compressionQueue;
   bool _isLoading = true;
 
@@ -24,11 +26,13 @@ class _MainShellState extends State<MainShell> {
   void initState() {
     super.initState();
     _databaseService = DatabaseService();
-    _compressionQueue = CompressionQueue(_databaseService);
+    _notificationService = NotificationService();
+    _compressionQueue = CompressionQueue(_databaseService, _notificationService);
     _initQueue();
   }
 
   Future<void> _initQueue() async {
+    await _notificationService.init();
     await _compressionQueue.init();
     if (mounted) {
       setState(() => _isLoading = false);

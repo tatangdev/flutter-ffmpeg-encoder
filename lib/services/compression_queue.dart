@@ -10,15 +10,17 @@ import '../models/compression_result.dart';
 import '../utils/file_utils.dart';
 import 'compression_service.dart';
 import 'database_service.dart';
+import 'notification_service.dart';
 
 class CompressionQueue extends ChangeNotifier {
   final DatabaseService _databaseService;
+  final NotificationService _notificationService;
   final List<CompressionJob> _jobs = [];
   Timer? _progressTimer;
 
   List<CompressionJob> get jobs => List.unmodifiable(_jobs);
 
-  CompressionQueue(this._databaseService);
+  CompressionQueue(this._databaseService, this._notificationService);
 
   Future<void> init() async {
     await _databaseService.markInterruptedJobsAsFailed();
@@ -27,11 +29,26 @@ class CompressionQueue extends ChangeNotifier {
     notifyListeners();
   }
 
+  bool _isProcessing = false;
+
   Future<void> addJob(CompressionJob job) async {
     _jobs.insert(0, job);
     await _databaseService.insertJob(job.toMap());
     notifyListeners();
-    _startJob(job);
+    _processNext();
+  }
+
+  Future<void> _processNext() async {
+    if (_isProcessing) return;
+    final next = _jobs.cast<CompressionJob?>().firstWhere(
+          (j) => j!.status == JobStatus.pending,
+          orElse: () => null,
+        );
+    if (next == null) return;
+    _isProcessing = true;
+    await _startJob(next);
+    _isProcessing = false;
+    _processNext();
   }
 
   Future<void> _startJob(CompressionJob job) async {
@@ -116,7 +133,14 @@ class CompressionQueue extends ChangeNotifier {
       _progressTimer?.cancel();
       _progressTimer = Timer.periodic(
         const Duration(milliseconds: 250),
-        (_) => notifyListeners(),
+        (_) {
+          notifyListeners();
+          _notificationService.showProgress(
+            jobId: job.id,
+            fileName: job.fileName,
+            progress: job.progress,
+          );
+        },
       );
 
       final result = await completer.future;
@@ -124,12 +148,31 @@ class CompressionQueue extends ChangeNotifier {
       _progressTimer = null;
       job.result = result;
       job.status = result.success ? JobStatus.completed : JobStatus.failed;
+
+      if (result.success) {
+        _notificationService.showCompleted(
+          jobId: job.id,
+          fileName: job.fileName,
+          savedPercentage: result.savedPercentage.toStringAsFixed(1),
+        );
+      } else {
+        _notificationService.showFailed(
+          jobId: job.id,
+          fileName: job.fileName,
+          errorMessage: result.errorMessage,
+        );
+      }
     } catch (e) {
       job.result = CompressionResult(
         success: false,
         errorMessage: e.toString(),
       );
       job.status = JobStatus.failed;
+      _notificationService.showFailed(
+        jobId: job.id,
+        fileName: job.fileName,
+        errorMessage: e.toString(),
+      );
     }
 
     job.session = null;
@@ -143,8 +186,11 @@ class CompressionQueue extends ChangeNotifier {
       await FFmpegKit.cancel(job.session!.getSessionId());
       job.status = JobStatus.cancelled;
       job.session = null;
+      _isProcessing = false;
+      await _notificationService.cancel(job.id);
       await _databaseService.updateJob(job.toMap());
       notifyListeners();
+      _processNext();
     }
   }
 
@@ -160,6 +206,7 @@ class CompressionQueue extends ChangeNotifier {
     for (final job in _jobs) {
       if (job.session != null) {
         FFmpegKit.cancel(job.session!.getSessionId());
+        _notificationService.cancel(job.id);
       }
     }
     _databaseService.close();

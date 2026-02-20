@@ -60,6 +60,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _checkPermissions();
     _loadDraft();
+    _permissionService.requestNotificationPermission();
   }
 
   Future<void> _loadDraft() async {
