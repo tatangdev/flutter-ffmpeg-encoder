@@ -88,10 +88,10 @@ class _HomeScreenState extends State<HomeScreen> {
       outputDir: _outputDir,
       settings: _settings,
     );
+    // Set draft state synchronously so callers can switch to the draft page
+    // without a flash of empty content, then persist to DB.
+    _draft = draft;
     await widget.databaseService.saveDraft(draft.toMap());
-    setState(() {
-      _draft = draft;
-    });
   }
 
   Future<void> _resumeDraft() async {
@@ -120,20 +120,29 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     // Re-extract info and thumbnail in parallel for freshness
-    final results = await Future.wait([
-      _fileService.getVideoInfo(file.path),
-      _fileService.extractThumbnail(file.path),
-    ]);
+    try {
+      final results = await Future.wait([
+        _fileService.getVideoInfo(file.path),
+        _fileService.extractThumbnail(file.path),
+      ]);
 
-    if (mounted) {
-      setState(() {
-        _selectedVideo = file;
-        _videoInfo = results[0] as VideoInfo;
-        _thumbnail = results[1] as File?;
-        _settings = draft.settings;
-        _outputDir = draft.outputDir;
-        _pageState = _PageState.ready;
-      });
+      if (mounted) {
+        setState(() {
+          _selectedVideo = file;
+          _videoInfo = results[0] as VideoInfo;
+          _thumbnail = results[1] as File?;
+          _settings = draft.settings;
+          _outputDir = draft.outputDir;
+          _pageState = _PageState.ready;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _pageState = _PageState.draft);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to restore draft: $e')),
+        );
+      }
     }
   }
 

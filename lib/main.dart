@@ -75,26 +75,6 @@ class VideoCompressorApp extends StatelessWidget {
             bottom: BorderSide(color: AppColors.borderSecondary),
           ),
         ),
-        navigationBarTheme: NavigationBarThemeData(
-          height: 60,
-          backgroundColor: Colors.white,
-          surfaceTintColor: Colors.transparent,
-          indicatorColor: Colors.transparent,
-          overlayColor: WidgetStateProperty.all(Colors.transparent),
-          labelTextStyle: WidgetStateProperty.resolveWith((states) {
-            if (states.contains(WidgetState.selected)) {
-              return const TextStyle(fontSize: 11, color: Color(0xFF1A1A1A));
-            }
-            return const TextStyle(fontSize: 11, color: Color(0xFF9C9C9C));
-          }),
-          iconTheme: WidgetStateProperty.resolveWith((states) {
-            if (states.contains(WidgetState.selected)) {
-              return const IconThemeData(color: Color(0xFF1A1A1A));
-            }
-            return const IconThemeData(color: Color(0xFF9C9C9C));
-          }),
-          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-        ),
         filledButtonTheme: FilledButtonThemeData(
           style: FilledButton.styleFrom(
             backgroundColor: AppColors.accent,

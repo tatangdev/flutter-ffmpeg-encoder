@@ -1,3 +1,5 @@
+import '../utils/file_utils.dart' show enumByName;
+
 enum ExportMode {
   custom('Custom'),
   socialMedia('Social Media');
@@ -242,12 +244,12 @@ class CompressionSettings {
 
   factory CompressionSettings.fromMap(Map<String, dynamic> map) {
     return CompressionSettings(
-      exportMode: ExportMode.values.byName(map['settings_export_mode'] as String),
-      platform: VideoPlatform.values.byName(map['settings_platform'] as String),
-      customResolution: CustomResolution.values.byName(map['settings_custom_resolution'] as String),
-      tier: QualityTier.values.byName(map['settings_tier'] as String),
-      aspectRatio: VideoAspectRatio.values.byName(map['settings_aspect_ratio'] as String),
-      fit: VideoFit.values.byName(map['settings_fit'] as String),
+      exportMode: enumByName(ExportMode.values, map['settings_export_mode'] as String, ExportMode.custom),
+      platform: enumByName(VideoPlatform.values, map['settings_platform'] as String, VideoPlatform.instagramPost),
+      customResolution: enumByName(CustomResolution.values, map['settings_custom_resolution'] as String, CustomResolution.fhd),
+      tier: enumByName(QualityTier.values, map['settings_tier'] as String, QualityTier.best),
+      aspectRatio: enumByName(VideoAspectRatio.values, map['settings_aspect_ratio'] as String, VideoAspectRatio.original),
+      fit: enumByName(VideoFit.values, map['settings_fit'] as String, VideoFit.contain),
       deleteOriginal: (map['settings_delete_original'] as int) == 1,
     );
   }

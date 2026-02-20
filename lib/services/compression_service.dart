@@ -1,11 +1,9 @@
 import '../models/compression_settings.dart';
+import '../utils/file_utils.dart' show shellQuote;
 
 /// Static utility for building FFmpeg command strings.
 class CompressionService {
   CompressionService._();
-
-  /// Wraps a file path in single quotes, escaping internal single quotes.
-  static String _quote(String path) => "'${path.replaceAll("'", r"'\''")}'";
 
   /// Builds the FFmpeg argument string from [settings].
   static String buildCommandStatic({
@@ -15,7 +13,7 @@ class CompressionService {
   }) {
     final p = settings.resolvedPreset;
     final args = <String>[
-      '-i', _quote(inputPath),
+      '-i', shellQuote(inputPath),
       '-y',
       '-threads', '0',
     ];
@@ -84,7 +82,7 @@ class CompressionService {
     // Fast start for streaming/upload
     args.addAll(['-movflags', '+faststart']);
 
-    args.add(_quote(outputPath));
+    args.add(shellQuote(outputPath));
     return args.join(' ');
   }
 }

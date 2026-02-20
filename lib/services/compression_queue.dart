@@ -73,13 +73,12 @@ class CompressionQueue extends ChangeNotifier {
 
   Future<void> _processNext() async {
     if (_isProcessing) return;
-    final next = _jobs.cast<CompressionJob?>().firstWhere(
-          (j) => j!.status == JobStatus.pending,
-          orElse: () => null,
-        );
-    if (next == null) return;
+
+    final idx = _jobs.indexWhere((j) => j.status == JobStatus.pending);
+    if (idx == -1) return;
+
     _isProcessing = true;
-    await _startJob(next);
+    await _startJob(_jobs[idx]);
     _isProcessing = false;
     _processNext();
   }
@@ -184,33 +183,42 @@ class CompressionQueue extends ChangeNotifier {
       final result = await completer.future;
       _progressTimer?.cancel();
       _progressTimer = null;
-      job.result = result;
-      job.status = result.success ? JobStatus.completed : JobStatus.failed;
 
-      if (result.success) {
-        _notificationService.showCompleted(
-          jobId: job.id,
-          fileName: job.fileName,
-          savedPercentage: result.savedPercentage.toStringAsFixed(1),
-        );
+      // If cancelJob() already marked this cancelled, just clean up the
+      // notification — don't overwrite the status or show a failure toast.
+      if (job.status == JobStatus.cancelled) {
+        await _notificationService.cancel(job.id);
       } else {
+        job.result = result;
+        job.status = result.success ? JobStatus.completed : JobStatus.failed;
+
+        if (result.success) {
+          _notificationService.showCompleted(
+            jobId: job.id,
+            fileName: job.fileName,
+            savedPercentage: result.savedPercentage.toStringAsFixed(1),
+          );
+        } else {
+          _notificationService.showFailed(
+            jobId: job.id,
+            fileName: job.fileName,
+            errorMessage: result.errorMessage,
+          );
+        }
+      }
+    } catch (e) {
+      if (job.status != JobStatus.cancelled) {
+        job.result = CompressionResult(
+          success: false,
+          errorMessage: e.toString(),
+        );
+        job.status = JobStatus.failed;
         _notificationService.showFailed(
           jobId: job.id,
           fileName: job.fileName,
-          errorMessage: result.errorMessage,
+          errorMessage: e.toString(),
         );
       }
-    } catch (e) {
-      job.result = CompressionResult(
-        success: false,
-        errorMessage: e.toString(),
-      );
-      job.status = JobStatus.failed;
-      _notificationService.showFailed(
-        jobId: job.id,
-        fileName: job.fileName,
-        errorMessage: e.toString(),
-      );
     }
 
     job.session = null;
@@ -222,15 +230,13 @@ class CompressionQueue extends ChangeNotifier {
   Future<void> cancelJob(String jobId) async {
     final job = _jobs.firstWhere((j) => j.id == jobId);
     if (job.session != null) {
-      await FFmpegKit.cancel(job.session!.getSessionId());
+      // Mark cancelled and update UI immediately.
       job.status = JobStatus.cancelled;
-      job.session = null;
-      _isProcessing = false;
-      await _notificationService.cancel(job.id);
-      await _databaseService.updateJob(job.toMap());
       notifyListeners();
-      await _stopForegroundServiceIfIdle();
-      _processNext();
+      // Signal FFmpeg to stop. The _startJob completer will resolve via the
+      // FFmpegKit callback, and _startJob's normal cleanup path (DB update,
+      // foreground service check, _processNext) runs without a race.
+      await FFmpegKit.cancel(job.session!.getSessionId());
     }
   }
 

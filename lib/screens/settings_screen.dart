@@ -25,6 +25,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final videos = await Permission.videos.isGranted;
     final manage = await Permission.manageExternalStorage.isGranted;
 
+    if (!mounted) return;
     setState(() {
       _storageGranted = storage || videos;
       _manageStorageGranted = manage;
@@ -175,27 +176,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
     );
   }
-}
 
-Widget _featureRow(IconData icon, String text) {
-  return Padding(
-    padding: const EdgeInsets.symmetric(vertical: 6),
-    child: Row(
-      children: [
-        Container(
-          width: 36,
-          height: 36,
-          decoration: BoxDecoration(
-            color: AppColors.bgSecondary,
-            borderRadius: BorderRadius.circular(10),
+  static Widget _featureRow(IconData icon, String text) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: AppColors.bgSecondary,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, size: 18, color: AppColors.textTertiary),
           ),
-          child: Icon(icon, size: 18, color: AppColors.textTertiary),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Text(text, style: AppTextStyles.textSmMedium),
-        ),
-      ],
-    ),
-  );
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(text, style: AppTextStyles.textSmMedium),
+          ),
+        ],
+      ),
+    );
+  }
 }

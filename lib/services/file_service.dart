@@ -9,6 +9,7 @@ import 'package:path_provider/path_provider.dart';
 
 import '../models/video_info.dart';
 import '../utils/constants.dart';
+import '../utils/file_utils.dart' show shellQuote;
 
 class FileService {
   /// Opens the system file picker to select a video file.
@@ -98,9 +99,8 @@ class FileService {
       'thumb_${DateTime.now().millisecondsSinceEpoch}.jpg',
     );
 
-    String quote(String p) => "'${p.replaceAll("'", r"'\''")}'";
     final session = await FFmpegKit.execute(
-      '-i ${quote(videoPath)} -ss 00:00:01 -vframes 1 -q:v 2 -y ${quote(thumbPath)}',
+      '-i ${shellQuote(videoPath)} -ss 00:00:01 -vframes 1 -q:v 2 -y ${shellQuote(thumbPath)}',
     );
     final returnCode = await session.getReturnCode();
 

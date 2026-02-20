@@ -3,6 +3,18 @@ import 'package:path/path.dart' as p;
 import 'constants.dart';
 import 'input_sanitizer.dart';
 
+/// Safely resolves an enum value by [name], returning [fallback] if not found.
+T enumByName<T extends Enum>(List<T> values, String name, T fallback) {
+  for (final v in values) {
+    if (v.name == name) return v;
+  }
+  return fallback;
+}
+
+/// Wraps a file path in single quotes, escaping internal single quotes.
+/// Used to safely pass paths to FFmpeg commands.
+String shellQuote(String path) => "'${path.replaceAll("'", r"'\''")}'";
+
 class FileUtils {
   FileUtils._();
 

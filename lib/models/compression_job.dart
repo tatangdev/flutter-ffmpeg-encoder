@@ -4,6 +4,7 @@ import 'package:ffmpeg_kit_flutter_new/ffmpeg_session.dart';
 
 import 'compression_result.dart';
 import 'compression_settings.dart';
+import '../utils/file_utils.dart' show enumByName;
 
 enum JobStatus { pending, compressing, completed, failed, cancelled }
 
@@ -59,7 +60,7 @@ class CompressionJob {
       outputDir: map['output_dir'] as String,
       fileName: map['file_name'] as String,
       createdAt: DateTime.fromMillisecondsSinceEpoch(map['created_at'] as int),
-      status: JobStatus.values.byName(map['status'] as String),
+      status: enumByName(JobStatus.values, map['status'] as String, JobStatus.failed),
       progress: (map['progress'] as num).toDouble(),
       thumbnailFile: map['thumbnail_path'] != null
           ? File(map['thumbnail_path'] as String)
