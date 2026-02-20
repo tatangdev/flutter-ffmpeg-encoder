@@ -45,6 +45,29 @@ class _MainShellState extends State<MainShell> {
     setState(() => _currentIndex = index);
   }
 
+  Widget _buildNavItem(IconData icon, IconData selectedIcon, String label, int index) {
+    final isSelected = _currentIndex == index;
+    final color = isSelected ? const Color(0xFF1A1A1A) : const Color(0xFF9C9C9C);
+    return GestureDetector(
+      onTap: () => _switchTab(index),
+      behavior: HitTestBehavior.opaque,
+      child: SizedBox(
+        width: 80,
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 14),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(isSelected ? selectedIcon : icon, color: color, size: 24),
+              const SizedBox(height: 2),
+              Text(label, style: TextStyle(fontSize: 11, color: color)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -74,30 +97,19 @@ class _MainShellState extends State<MainShell> {
           ],
         ),
         bottomNavigationBar: Container(
+          height: 72,
           decoration: const BoxDecoration(
+            color: Colors.white,
             border: Border(
               top: BorderSide(color: AppColors.borderSecondary),
             ),
           ),
-          child: NavigationBar(
-            selectedIndex: _currentIndex,
-            onDestinationSelected: _switchTab,
-            destinations: const [
-              NavigationDestination(
-                icon: Icon(Icons.compress),
-                selectedIcon: Icon(Icons.compress),
-                label: 'Compress',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.queue_outlined),
-                selectedIcon: Icon(Icons.queue),
-                label: 'Queue',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.settings_outlined),
-                selectedIcon: Icon(Icons.settings),
-                label: 'Settings',
-              ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildNavItem(Icons.compress, Icons.compress, 'Compress', 0),
+              _buildNavItem(Icons.queue_outlined, Icons.queue, 'Queue', 1),
+              _buildNavItem(Icons.settings_outlined, Icons.settings, 'Settings', 2),
             ],
           ),
         ),
