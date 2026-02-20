@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/compression_settings.dart';
+import '../theme/app_typography.dart';
 
 class CompressionSettingsForm extends StatelessWidget {
   final CompressionSettings settings;
@@ -16,15 +17,15 @@ class CompressionSettingsForm extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            const Text(
               'Compression Settings',
-              style: Theme.of(context).textTheme.titleMedium,
+              style: AppTextStyles.textLgSemibold,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
 
             // Resolution
             _dropdown<VideoResolution>(
@@ -59,7 +60,8 @@ class CompressionSettingsForm extends StatelessWidget {
             // Delete original toggle
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text('Delete original after compression'),
+              title: const Text('Delete original after compression',
+                  style: AppTextStyles.textMdSemibold),
               value: settings.deleteOriginal,
               onChanged: (v) =>
                   onChanged(settings.copyWith(deleteOriginal: v)),
@@ -79,7 +81,7 @@ class CompressionSettingsForm extends StatelessWidget {
   }) {
     return Row(
       children: [
-        SizedBox(width: 100, child: Text(label)),
+        SizedBox(width: 100, child: Text(label, style: AppTextStyles.textSmMedium)),
         Expanded(
           child: DropdownButtonFormField<T>(
             initialValue: value,

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../models/compression_result.dart';
 import '../models/compression_settings.dart';
 import '../services/compression_service.dart';
+import '../theme/app_typography.dart';
 import '../utils/file_utils.dart';
 
 class CompressionScreen extends StatefulWidget {
@@ -98,23 +99,32 @@ class _CompressionScreenState extends State<CompressionScreen> {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Icon(Icons.compress, size: 64, color: Colors.blue),
+        Container(
+          width: 80,
+          height: 80,
+          decoration: BoxDecoration(
+            color: AppColors.bgSecondary,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: const Icon(Icons.compress, size: 40, color: AppColors.accent),
+        ),
         const SizedBox(height: 32),
-        LinearProgressIndicator(
-          value: _progress,
-          minHeight: 8,
+        ClipRRect(
           borderRadius: BorderRadius.circular(4),
+          child: LinearProgressIndicator(
+            value: _progress,
+          ),
         ),
         const SizedBox(height: 16),
         Text(
           '${(_progress * 100).toStringAsFixed(1)}%',
-          style: Theme.of(context).textTheme.headlineSmall,
+          style: AppTextStyles.displayXs,
         ),
         const SizedBox(height: 8),
         if (remaining != null)
           Text(
             'Estimated time remaining: ${FileUtils.formatDuration(remaining)}',
-            style: Theme.of(context).textTheme.bodyMedium,
+            style: AppTextStyles.textSmMedium,
           ),
         const SizedBox(height: 32),
         OutlinedButton.icon(
@@ -133,29 +143,38 @@ class _CompressionScreenState extends State<CompressionScreen> {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(
-          result.success ? Icons.check_circle : Icons.error,
-          size: 80,
-          color: result.success ? Colors.green : theme.colorScheme.error,
+        Container(
+          width: 80,
+          height: 80,
+          decoration: BoxDecoration(
+            color: result.success
+                ? AppColors.accent.withValues(alpha: 0.1)
+                : theme.colorScheme.error.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Icon(
+            result.success ? Icons.check_circle : Icons.error,
+            size: 40,
+            color: result.success ? AppColors.accent : theme.colorScheme.error,
+          ),
         ),
         const SizedBox(height: 24),
         Text(
           result.success ? 'Compression Successful!' : 'Compression Failed',
-          style: theme.textTheme.headlineSmall,
+          style: AppTextStyles.displayXs,
         ),
         const SizedBox(height: 16),
         if (result.success) ...[
           Text(
             '${FileUtils.formatFileSize(result.originalSizeBytes ?? 0)}'
             ' -> ${FileUtils.formatFileSize(result.compressedSizeBytes ?? 0)}',
-            style: theme.textTheme.bodyLarge,
+            style: AppTextStyles.textMdRegular,
           ),
           const SizedBox(height: 8),
           Text(
             'Saved ${result.savedPercentage.toStringAsFixed(1)}%',
-            style: theme.textTheme.titleMedium?.copyWith(
-              color: theme.colorScheme.primary,
-              fontWeight: FontWeight.bold,
+            style: AppTextStyles.textLgSemibold.copyWith(
+              color: AppColors.textBrand,
             ),
           ),
           if (result.outputPath != null)
@@ -163,7 +182,9 @@ class _CompressionScreenState extends State<CompressionScreen> {
               padding: const EdgeInsets.only(top: 12),
               child: Text(
                 'Saved to:\n${result.outputPath}',
-                style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey),
+                style: AppTextStyles.textSmMedium.copyWith(
+                  color: AppColors.textTertiary,
+                ),
                 textAlign: TextAlign.center,
               ),
             ),
@@ -172,13 +193,15 @@ class _CompressionScreenState extends State<CompressionScreen> {
               padding: const EdgeInsets.only(top: 8),
               child: Text(
                 'Original file deleted',
-                style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey),
+                style: AppTextStyles.textSmMedium.copyWith(
+                  color: AppColors.textTertiary,
+                ),
               ),
             ),
         ] else ...[
           Text(
             result.errorMessage ?? 'An unknown error occurred',
-            style: theme.textTheme.bodyLarge?.copyWith(
+            style: AppTextStyles.textMdRegular.copyWith(
               color: theme.colorScheme.error,
             ),
             textAlign: TextAlign.center,

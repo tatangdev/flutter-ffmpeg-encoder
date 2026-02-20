@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/compression_result.dart';
+import '../theme/app_typography.dart';
 import '../utils/file_utils.dart';
 
 class FileSizeComparison extends StatelessWidget {
@@ -15,16 +16,32 @@ class FileSizeComparison extends StatelessWidget {
     if (!result.success) {
       return Card(
         color: theme.colorScheme.errorContainer,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+          side: BorderSide(
+            color: theme.colorScheme.error.withValues(alpha: 0.3),
+          ),
+        ),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(20),
           child: Row(
             children: [
-              Icon(Icons.error_outline, color: theme.colorScheme.error),
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.error.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(Icons.error_outline, color: theme.colorScheme.error),
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   result.errorMessage ?? 'Compression failed',
-                  style: TextStyle(color: theme.colorScheme.onErrorContainer),
+                  style: AppTextStyles.textSmMedium.copyWith(
+                    color: theme.colorScheme.onErrorContainer,
+                  ),
                 ),
               ),
             ],
@@ -39,19 +56,27 @@ class FileSizeComparison extends StatelessWidget {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Icon(Icons.check_circle, color: theme.colorScheme.primary),
-                const SizedBox(width: 8),
-                Text('Compression Complete',
-                    style: theme.textTheme.titleMedium),
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: AppColors.accent.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.check_circle, color: AppColors.accent),
+                ),
+                const SizedBox(width: 12),
+                const Text('Compression Complete',
+                    style: AppTextStyles.textLgSemibold),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
 
             // Original size bar
             _sizeBar(
@@ -79,15 +104,16 @@ class FileSizeComparison extends StatelessWidget {
               children: [
                 Text(
                   'Saved ${result.savedPercentage.toStringAsFixed(1)}%',
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.primary,
+                  style: AppTextStyles.textMdSemibold.copyWith(
+                    color: AppColors.textBrand,
                   ),
                 ),
                 if (result.compressionDuration != null)
                   Text(
                     'Time: ${FileUtils.formatDuration(result.compressionDuration!)}',
-                    style: theme.textTheme.bodySmall,
+                    style: AppTextStyles.textSmMedium.copyWith(
+                      color: AppColors.textTertiary,
+                    ),
                   ),
               ],
             ),
@@ -96,8 +122,9 @@ class FileSizeComparison extends StatelessWidget {
                 padding: const EdgeInsets.only(top: 8),
                 child: Text(
                   'Original file deleted',
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(color: Colors.grey),
+                  style: AppTextStyles.textSmMedium.copyWith(
+                    color: AppColors.textTertiary,
+                  ),
                 ),
               ),
           ],
@@ -120,17 +147,17 @@ class FileSizeComparison extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(label),
-            Text(FileUtils.formatFileSize(size)),
+            Text(label, style: AppTextStyles.textSmMedium),
+            Text(FileUtils.formatFileSize(size), style: AppTextStyles.textSmMedium.copyWith(
+              color: AppColors.textPrimary,
+            )),
           ],
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 6),
         ClipRRect(
           borderRadius: BorderRadius.circular(4),
           child: LinearProgressIndicator(
             value: fraction,
-            minHeight: 12,
-            backgroundColor: Colors.grey.shade200,
             valueColor: AlwaysStoppedAnimation(color),
           ),
         ),

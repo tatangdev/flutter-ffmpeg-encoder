@@ -11,6 +11,7 @@ import '../services/compression_service.dart';
 import '../services/file_service.dart';
 import '../services/permission_service.dart';
 import '../utils/input_sanitizer.dart';
+import '../theme/app_typography.dart';
 import '../widgets/compression_settings_form.dart';
 import '../widgets/file_size_comparison.dart';
 import '../widgets/video_info_card.dart';
@@ -60,10 +61,14 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        title: const Text('Permissions Required'),
-        content: const Text(
+        title: const Text('Permissions Required',
+            style: AppTextStyles.textLgSemibold),
+        content: Text(
           'This app needs storage access to pick videos and save '
           'compressed files. Please grant the required permissions.',
+          style: AppTextStyles.textMdRegular.copyWith(
+            color: AppColors.textSecondary,
+          ),
         ),
         actions: [
           TextButton(
@@ -196,10 +201,9 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Video Compressor'),
-        centerTitle: true,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -207,17 +211,31 @@ class _HomeScreenState extends State<HomeScreen> {
             if (!_permissionsGranted) ...[
               Card(
                 color: Theme.of(context).colorScheme.errorContainer,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
+                  side: BorderSide(
+                    color: Theme.of(context).colorScheme.error.withValues(alpha: 0.3),
+                  ),
+                ),
                 child: Padding(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(16),
                   child: Row(
                     children: [
-                      Icon(Icons.warning_amber,
-                          color: Theme.of(context).colorScheme.error),
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.error.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(Icons.warning_amber,
+                            color: Theme.of(context).colorScheme.error),
+                      ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           'Storage permissions not granted',
-                          style: TextStyle(
+                          style: AppTextStyles.textSmMedium.copyWith(
                             color: Theme.of(context)
                                 .colorScheme
                                 .onErrorContainer,
@@ -240,9 +258,6 @@ class _HomeScreenState extends State<HomeScreen> {
               onPressed: _pickVideo,
               icon: const Icon(Icons.video_library),
               label: const Text('Select Video'),
-              style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-              ),
             ),
             const SizedBox(height: 16),
 
@@ -265,13 +280,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 onPressed: _startCompression,
                 icon: const Icon(Icons.compress),
                 label: const Text('Compress Video'),
-                style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  backgroundColor:
-                      Theme.of(context).colorScheme.secondary,
-                  foregroundColor:
-                      Theme.of(context).colorScheme.onSecondary,
-                ),
               ),
               const SizedBox(height: 16),
             ],
