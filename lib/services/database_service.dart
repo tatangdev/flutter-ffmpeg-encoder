@@ -3,7 +3,7 @@ import 'package:sqflite/sqflite.dart';
 
 class DatabaseService {
   static const _dbName = 'devcoder.db';
-  static const _dbVersion = 3;
+  static const _dbVersion = 4;
   static const _jobsTable = 'compression_jobs';
   static const _draftsTable = 'drafts';
 
@@ -43,6 +43,7 @@ class DatabaseService {
         settings_tier               TEXT NOT NULL,
         settings_aspect_ratio       TEXT NOT NULL,
         settings_fit                TEXT NOT NULL,
+        settings_rotation           TEXT NOT NULL DEFAULT 'none',
         settings_delete_original    INTEGER NOT NULL DEFAULT 0,
 
         result_success              INTEGER,
@@ -65,6 +66,14 @@ class DatabaseService {
     }
     if (oldVersion < 3) {
       await _createJobIndices(db);
+    }
+    if (oldVersion < 4) {
+      await db.execute(
+        "ALTER TABLE $_jobsTable ADD COLUMN settings_rotation TEXT NOT NULL DEFAULT 'none'",
+      );
+      await db.execute(
+        "ALTER TABLE $_draftsTable ADD COLUMN settings_rotation TEXT NOT NULL DEFAULT 'none'",
+      );
     }
   }
 
@@ -99,6 +108,7 @@ class DatabaseService {
         settings_tier               TEXT NOT NULL,
         settings_aspect_ratio       TEXT NOT NULL,
         settings_fit                TEXT NOT NULL,
+        settings_rotation           TEXT NOT NULL DEFAULT 'none',
         settings_delete_original    INTEGER NOT NULL DEFAULT 0
       )
     ''');

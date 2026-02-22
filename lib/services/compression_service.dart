@@ -18,17 +18,22 @@ class CompressionService {
       '-threads', '0',
     ];
 
+    // Rotation prefix (applied before scale/crop/pad)
+    final rotPrefix = settings.rotation.ffmpegFilter.isNotEmpty
+        ? '${settings.rotation.ffmpegFilter},'
+        : '';
+
     // Video filter chain
     final outW = settings.resolvedWidth;
     final outH = settings.resolvedHeight;
     if (settings.aspectRatio.isOriginal) {
       // Keep original resolution, only force fps
-      args.addAll(['-vf', 'fps=${p.fps}']);
+      args.addAll(['-vf', '${rotPrefix}fps=${p.fps}']);
     } else if (settings.fit == VideoFit.cover) {
       // Fill frame and crop overflow
       args.addAll([
         '-vf',
-        'scale=$outW:$outH:force_original_aspect_ratio=increase,'
+        '${rotPrefix}scale=$outW:$outH:force_original_aspect_ratio=increase,'
             'crop=$outW:$outH,'
             'setsar=1,'
             'fps=${p.fps}',
@@ -37,7 +42,7 @@ class CompressionService {
       // Fit entire video, pad with black bars
       args.addAll([
         '-vf',
-        'scale=$outW:$outH:force_original_aspect_ratio=decrease,'
+        '${rotPrefix}scale=$outW:$outH:force_original_aspect_ratio=decrease,'
             'pad=$outW:$outH:(ow-iw)/2:(oh-ih)/2,'
             'setsar=1,'
             'fps=${p.fps}',

@@ -53,6 +53,21 @@ enum VideoFit {
   final String description;
 }
 
+enum VideoRotation {
+  none(0, '0°', ''),
+  cw90(90, '90°', 'transpose=1'),
+  cw180(180, '180°', 'hflip,vflip'),
+  cw270(270, '270°', 'transpose=2');
+
+  const VideoRotation(this.degrees, this.label, this.ffmpegFilter);
+  final int degrees;
+  final String label;
+  final String ffmpegFilter;
+
+  /// Whether this rotation swaps width and height (90° / 270°).
+  bool get swapsDimensions => this == cw90 || this == cw270;
+}
+
 enum QualityTier {
   best('Best Quality'),
   balanced('Balanced');
@@ -185,6 +200,7 @@ class CompressionSettings {
   final QualityTier tier;
   final VideoAspectRatio aspectRatio;
   final VideoFit fit;
+  final VideoRotation rotation;
   final bool deleteOriginal;
 
   const CompressionSettings({
@@ -194,6 +210,7 @@ class CompressionSettings {
     this.tier = QualityTier.best,
     this.aspectRatio = VideoAspectRatio.original,
     this.fit = VideoFit.contain,
+    this.rotation = VideoRotation.none,
     this.deleteOriginal = false,
   });
 
@@ -238,6 +255,7 @@ class CompressionSettings {
       'settings_tier': tier.name,
       'settings_aspect_ratio': aspectRatio.name,
       'settings_fit': fit.name,
+      'settings_rotation': rotation.name,
       'settings_delete_original': deleteOriginal ? 1 : 0,
     };
   }
@@ -250,6 +268,7 @@ class CompressionSettings {
       tier: enumByName(QualityTier.values, map['settings_tier'] as String, QualityTier.best),
       aspectRatio: enumByName(VideoAspectRatio.values, map['settings_aspect_ratio'] as String, VideoAspectRatio.original),
       fit: enumByName(VideoFit.values, map['settings_fit'] as String, VideoFit.contain),
+      rotation: enumByName(VideoRotation.values, map['settings_rotation'] as String? ?? 'none', VideoRotation.none),
       deleteOriginal: (map['settings_delete_original'] as int) == 1,
     );
   }
@@ -261,6 +280,7 @@ class CompressionSettings {
     QualityTier? tier,
     VideoAspectRatio? aspectRatio,
     VideoFit? fit,
+    VideoRotation? rotation,
     bool? deleteOriginal,
   }) {
     return CompressionSettings(
@@ -270,6 +290,7 @@ class CompressionSettings {
       tier: tier ?? this.tier,
       aspectRatio: aspectRatio ?? this.aspectRatio,
       fit: fit ?? this.fit,
+      rotation: rotation ?? this.rotation,
       deleteOriginal: deleteOriginal ?? this.deleteOriginal,
     );
   }

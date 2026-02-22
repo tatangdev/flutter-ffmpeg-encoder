@@ -313,6 +313,8 @@ class _HomeScreenState extends State<HomeScreen> {
             _summaryRow('Size', _videoInfo?.formattedSize ?? ''),
             _summaryRow('Mode', _settings.exportMode.label),
             _summaryRow('Quality', _settings.tier.label),
+            if (_settings.rotation != VideoRotation.none)
+              _summaryRow('Rotation', _settings.rotation.label),
             _summaryRow('Output', _outputDir ?? ''),
           ],
         ),

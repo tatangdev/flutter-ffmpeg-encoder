@@ -161,10 +161,13 @@ class OutputSettingsCard extends StatelessWidget {
           _AspectRatioPreview(
             aspectRatio: settings.aspectRatio,
             fit: settings.fit,
+            rotation: settings.rotation,
             thumbnailFile: thumbnailFile,
             videoWidth: videoWidth,
             videoHeight: videoHeight,
           ),
+          const SizedBox(height: 12),
+          _buildRotationSelector(),
           const SizedBox(height: 8),
           Text(
             settings.aspectRatio.isOriginal
@@ -176,6 +179,44 @@ class OutputSettingsCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildRotationSelector() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: VideoRotation.values.map((r) {
+        final isSelected = settings.rotation == r;
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: GestureDetector(
+            onTap: () => onChanged(settings.copyWith(rotation: r)),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: 44,
+              height: 36,
+              decoration: BoxDecoration(
+                color: isSelected ? AppColors.accent : Colors.transparent,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: isSelected
+                      ? AppColors.accent
+                      : AppColors.borderSecondary,
+                ),
+              ),
+              child: Center(
+                child: Text(
+                  r.label,
+                  style: AppTextStyles.textSmSemibold.copyWith(
+                    color:
+                        isSelected ? Colors.white : AppColors.textSecondary,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 
@@ -345,6 +386,7 @@ class OutputSettingsCard extends StatelessWidget {
 class _AspectRatioPreview extends StatelessWidget {
   final VideoAspectRatio aspectRatio;
   final VideoFit fit;
+  final VideoRotation rotation;
   final File? thumbnailFile;
   final int? videoWidth;
   final int? videoHeight;
@@ -357,6 +399,7 @@ class _AspectRatioPreview extends StatelessWidget {
   const _AspectRatioPreview({
     required this.aspectRatio,
     required this.fit,
+    required this.rotation,
     this.thumbnailFile,
     this.videoWidth,
     this.videoHeight,
@@ -367,8 +410,15 @@ class _AspectRatioPreview extends StatelessWidget {
           ? videoWidth! / videoHeight!
           : null;
 
+  /// Video ratio after applying rotation (swaps for 90°/270°).
+  double? get _effectiveVideoRatio {
+    final vr = _videoRatio;
+    if (vr == null) return null;
+    return rotation.swapsDimensions ? 1.0 / vr : vr;
+  }
+
   double get _displayRatio => aspectRatio.isOriginal
-      ? (_videoRatio ?? 1.0)
+      ? (_effectiveVideoRatio ?? 1.0)
       : aspectRatio.width / aspectRatio.height;
 
   bool get _isCover => fit == VideoFit.cover || aspectRatio.isOriginal;
@@ -389,15 +439,15 @@ class _AspectRatioPreview extends StatelessWidget {
     final ratio = _displayRatio;
     final (frameW, frameH) = _fitInBounds(ratio, _maxW, _maxH);
 
-    // In contain mode, shrink the inner box to the video's proportions
-    // within the frame so it fits without cropping (black bars on 2 sides).
+    // In contain mode, shrink the inner box to the rotated video's
+    // proportions so it fits without cropping (black bars on 2 sides).
     var (innerW, innerH) = (frameW, frameH);
-    final vr = _videoRatio;
-    if (!_isCover && vr != null && (vr - ratio).abs() >= 0.01) {
-      if (vr > ratio) {
-        innerH = frameW / vr;
+    final evr = _effectiveVideoRatio;
+    if (!_isCover && evr != null && (evr - ratio).abs() >= 0.01) {
+      if (evr > ratio) {
+        innerH = frameW / evr;
       } else {
-        innerW = frameH * vr;
+        innerW = frameH * evr;
       }
     }
 
@@ -412,19 +462,22 @@ class _AspectRatioPreview extends StatelessWidget {
       ),
       clipBehavior: Clip.antiAlias,
       child: thumbnailFile != null
-          ? Center(
-              child: AnimatedContainer(
+          ? OverflowBox(
+              maxWidth: double.infinity,
+              maxHeight: double.infinity,
+              child: AnimatedRotation(
+                turns: rotation.degrees / 360.0,
                 duration: _animDuration,
                 curve: _animCurve,
-                width: innerW,
-                height: innerH,
-                decoration: const BoxDecoration(),
-                clipBehavior: Clip.antiAlias,
-                child: Image.file(
-                  thumbnailFile!,
-                  width: double.infinity,
-                  height: double.infinity,
-                  fit: BoxFit.cover,
+                child: AnimatedContainer(
+                  duration: _animDuration,
+                  curve: _animCurve,
+                  width: rotation.swapsDimensions ? innerH : innerW,
+                  height: rotation.swapsDimensions ? innerW : innerH,
+                  child: Image.file(
+                    thumbnailFile!,
+                    fit: BoxFit.cover,
+                  ),
                 ),
               ),
             )
